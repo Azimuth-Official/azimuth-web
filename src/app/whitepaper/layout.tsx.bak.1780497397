@@ -1,0 +1,15 @@
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Whitepaper — Azimuth",
+  description:
+    "Technical whitepaper for Azimuth Network: a decentralized positioning and timing network built on signals of opportunity.",
+};
+
+export default function WhitepaperLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return <>{children}</>;
+}

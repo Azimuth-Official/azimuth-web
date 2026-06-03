@@ -1,0 +1,51 @@
+export const metadata = {
+  title: "Tokenomics",
+  description: "Token utility, node operator rewards, query payments, and governance for the Azimuth network.",
+  alternates: { canonical: "https://azimuth.day/docs/tokenomics" },
+  openGraph: {
+    title: "Tokenomics",
+    description: "Token utility, node operator rewards, query payments, and governance for the Azimuth network.",
+    url: "https://azimuth.day/docs/tokenomics",
+  },
+  twitter: {
+    title: "Tokenomics",
+    description: "Token utility, node operator rewards, query payments, and governance for the Azimuth network.",
+  },
+};
+
+# Tokenomics
+
+*Detailed tokenomics will be published before mainnet launch. Chain selection is in progress.*
+
+## Token Utility
+
+The Azimuth token serves three primary functions within the network:
+
+- **Node Rewards:** Operators earn tokens for contributing observation data to the network. Rewards are proportional to the quality and value of the data provided.
+- **Query Payments:** Applications and devices consuming positioning data from the network pay in tokens.
+- **Governance:** Token holders participate in network governance decisions including protocol upgrades, reward parameter adjustments, and treasury allocation.
+
+## Reward Factors
+
+Node operator rewards are determined by several factors:
+
+- **Coverage Area:** Nodes in underserved areas earn more than nodes in already well-covered regions.
+- **Uptime:** Consistent, reliable nodes earn more than intermittent ones.
+- **Data Quality:** Higher precision observations (better hardware, better antenna placement) earn proportionally more.
+- **Signal Diversity:** Nodes that capture multiple signal types (LTE + DTV + FM) earn more than single-signal nodes.
+
+## Tier Multipliers
+
+Higher-tier hardware produces higher-quality data and earns proportionally higher rewards:
+
+- **Tier 1 (BYOD):** Baseline reward rate. Consumer SDR dongle, consumer antenna.
+- **Tier 2 (Dedicated):** Enhanced reward multiplier. GPS-disciplined timing enables more precise observations.
+- **Tier 3 (Coherent Array):** Premium reward multiplier. Angle-of-arrival measurements in addition to timing provide the highest-value data.
+
+## Anti-Sybil Mechanisms
+
+The network uses several mechanisms to prevent fraudulent nodes from earning rewards:
+
+- **GPS-disciplined timestamps** from Tier 2+ nodes establish ground truth for cross-validating Tier 1 observations.
+- **Cross-validation** between overlapping nodes detects inconsistent or fabricated observations.
+- **Signal fingerprinting** verifies that reported observations match the expected radio environment at the claimed location.

@@ -1,0 +1,59 @@
+export const metadata = {
+  title: "Architecture",
+  description: "Four-layer system design transforming ambient radio signals into decentralized positioning data.",
+  alternates: { canonical: "https://azimuth.day/docs/architecture" },
+  openGraph: {
+    title: "Architecture",
+    description: "Four-layer system design transforming ambient radio signals into decentralized positioning data.",
+    url: "https://azimuth.day/docs/architecture",
+  },
+  twitter: {
+    title: "Architecture",
+    description: "Four-layer system design transforming ambient radio signals into decentralized positioning data.",
+  },
+};
+
+import JsonLd from "@/components/JsonLd";
+
+<JsonLd data={{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "Azimuth Architecture",
+  "description": "Four-layer system design transforming ambient radio signals into decentralized positioning data.",
+  "url": "https://azimuth.day/docs/architecture",
+  "author": { "@type": "Organization", "name": "Azimuth" }
+}} />
+
+
+# Architecture
+
+## Overview
+
+Azimuth operates as a four-layer system that transforms ambient radio signals into positioning data through a decentralized network of passive receivers.
+
+## Node Layer
+
+SDR receivers deployed by node operators passively capture timing information from signals of opportunity — LTE/5G cell tower reference signals, digital television pilots, and FM radio subcarriers. Each node extracts precise timestamps from these signals without transmitting anything.
+
+Nodes range from simple USB SDR dongles connected to consumer hardware (Tier 1) to dedicated units with GPS-disciplined oscillators and outdoor antennas (Tier 2) to multi-channel coherent arrays capable of both time and angle measurements (Tier 3).
+
+## Transport Layer
+
+Observations — timestamped signal measurements tagged with receiver location and signal metadata — are reported via standard internet connections to the Azimuth aggregation backend. Observations are lightweight (typically under 1 KB each) and are batched for efficiency.
+
+Each observation includes: signal type, frequency, transmitter ID (cell ID, channel number, etc.), time-of-arrival measurement, signal strength, and receiver metadata.
+
+## Processing Layer
+
+The aggregation backend performs several key functions:
+
+- **TDOA Computation:** Time-Difference-of-Arrival calculations using observations from multiple nodes produce position estimates for both transmitters and receivers.
+- **Radio Environment Mapping:** Continuous observations build and maintain a living map of the radio environment — transmitter locations, signal propagation characteristics, and coverage patterns.
+- **Signal Fingerprint Database:** Unique signal characteristics at specific locations create a fingerprint database that enables positioning even with a single receiver.
+- **Cross-Validation:** Overlapping observations from multiple nodes enable validation of individual node accuracy, forming the basis of the anti-Sybil mechanism.
+
+## Query Layer
+
+The positioning API serves location queries from applications and devices. Clients submit their own signal observations and receive position estimates computed against the crowdsourced observation database.
+
+Query types include real-time positioning (submit observations, get position), assisted positioning (combine with GPS for improved accuracy), and historical analysis (query the radio environment at a past time and location).

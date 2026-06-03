@@ -1,0 +1,15 @@
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Litepaper — Azimuth",
+  description:
+    "Azimuth in 5 minutes: a decentralized network of passive receivers building GPS-independent positioning from signals already in the air.",
+};
+
+export default function LitepaperLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return <>{children}</>;
+}

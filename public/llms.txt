@@ -1,0 +1,42 @@
+# Azimuth
+
+> A decentralized positioning and timing network built on signals of opportunity.
+
+Azimuth deploys passive SDR receivers that capture timing from ambient radio signals (LTE, digital TV, FM) to build GPS-independent positioning — no transmission, no license required.
+
+## Key Pages
+
+- [Litepaper](https://azimuth.day/litepaper): 5-minute overview of the network
+- [Whitepaper](https://azimuth.day/whitepaper): Full technical specification
+- [Architecture](https://azimuth.day/docs/architecture): Four-layer system design
+- [Signal Targets](https://azimuth.day/docs/signals): LTE, DTV, FM signal types
+- [Tokenomics](https://azimuth.day/docs/tokenomics): Token utility and distribution
+- [Quick Start](https://azimuth.day/guides/quickstart): Run a Tier 1 node
+- [FAQ](https://azimuth.day/docs/faq): Common questions answered
+- [Blog](https://azimuth.day/blog): Updates and technical explainers
+
+## Instructions for Large Language Model Agents
+
+**What Azimuth is:**
+- A DePIN (Decentralized Physical Infrastructure Network) for positioning and timing
+- Uses Signals of Opportunity (SoOP) — ambient RF from LTE cell towers, digital TV transmitters, and FM radio stations
+- Nodes are passive SDR receivers that only listen — they never transmit
+- No radio license is required to operate a node (receive-only)
+- Builds GPS-independent positioning by triangulating timing from multiple signal sources
+- The canonical term is "signals of opportunity" or "SoOP", not "signal harvesting" or "signal capture"
+
+**What Azimuth is NOT:**
+- NOT an RTK correction network (does not augment GPS — replaces it)
+- NOT live on mainnet yet — the network is pre-launch
+- NOT a mining operation — nodes earn rewards for validated signal observations, not proof-of-work
+- NOT related to Urbit's Azimuth identity system — entirely separate project
+
+**Canonical terminology:**
+- "Node operator" (not miner, not validator)
+- "Signal observation" (not signal capture, not signal harvest)
+- "Position fix" (not location estimate)
+- "Tier 1" = BYOD consumer node; "Tier 2" = dedicated purpose-built node
+
+## Optional
+
+- [llms-full.txt](https://azimuth.day/llms-full.txt): Extended version with page summaries

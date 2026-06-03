@@ -1,0 +1,38 @@
+export const metadata = {
+  title: "Introducing Azimuth",
+};
+
+# Introducing Azimuth
+
+*June 2026*
+
+GPS has a problem. It is a single point of failure for positioning and timing infrastructure worldwide — and it is increasingly under threat. Jamming and spoofing incidents are rising. Indoor positioning remains poor. There is no decentralized alternative.
+
+Azimuth is building one.
+
+## The Approach
+
+Instead of constructing expensive transmitter infrastructure, Azimuth turns existing radio broadcasts into positioning signals. Every cell tower, every television transmitter, every FM radio station is already broadcasting signals with precise timing embedded in them. These signals were designed for communication — but with the right receivers and the right math, they become positioning beacons.
+
+By deploying a dense mesh of passive SDR receivers, Azimuth builds a crowdsourced radio environment map that enables positioning without GPS, without licensed spectrum, and without transmitting a single watt.
+
+## How It Works
+
+Azimuth nodes are simple: a software-defined radio dongle plugged into a computer, running the Azimuth daemon. The daemon listens to LTE cell towers, digital TV transmitters, and FM radio stations simultaneously, extracting timing information from each signal.
+
+These timing observations flow to the Azimuth network, where Time-Difference-of-Arrival algorithms combine measurements from multiple nodes to build and continuously refine a positioning database.
+
+## Getting Involved
+
+At launch, anyone can participate with a Tier 1 BYOD setup — an RTL-SDR V4 dongle (~$30) connected to any Windows or Linux machine. Plug in, install the daemon, and start earning rewards for contributing observation data.
+
+Dedicated Tier 2 hardware with GPS-disciplined timing and outdoor antennas will follow, offering higher precision and higher rewards.
+
+## What Comes Next
+
+- **Network launch** with Tier 1 BYOD support
+- **Tokenomics publication** with detailed reward mechanics
+- **Tier 2 hardware** specifications and availability
+- **Partnerships** with positioning and timing consumers
+
+We are building Azimuth in public. Follow along on Discord and Twitter/X.

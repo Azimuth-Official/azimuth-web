@@ -1,0 +1,41 @@
+export const metadata = {
+  title: "What Are Signals of Opportunity?",
+};
+
+# What Are Signals of Opportunity?
+
+*June 2026*
+
+Every cell tower broadcasts synchronization signals so your phone can connect. Every television transmitter sends pilot tones so your TV can lock onto the picture. Every FM radio station embeds a data subcarrier for station identification. These signals blanket cities, suburbs, and rural areas alike — billions of watts of RF energy, broadcasting 24 hours a day, 7 days a week.
+
+None of them were designed for positioning. All of them can be used for it.
+
+## From Communication to Navigation
+
+The key insight behind signals-of-opportunity (SoOP) positioning is simple: if you know where a transmitter is and when it sent a signal, measuring when that signal arrives at your location tells you how far away you are. Do this with multiple transmitters, and you can triangulate your position.
+
+This is exactly how GPS works — satellites broadcast timing signals, and your receiver measures arrival times to compute position. The difference is that GPS uses dedicated navigation satellites in medium Earth orbit. SoOP uses transmitters that are already there: cell towers on rooftops, TV transmitters on hilltops, radio stations across the landscape.
+
+## Time-Difference-of-Arrival
+
+The core algorithm is Time-Difference-of-Arrival (TDOA). Rather than measuring the absolute time a signal was sent (which requires extremely precise clock synchronization), TDOA measures the difference in arrival times of the same signal at multiple receivers.
+
+If two receivers both hear the same cell tower signal, and one hears it 100 nanoseconds before the other, that time difference constrains the possible positions to a hyperbola. Add more receivers and more signals, and the hyperbolas intersect at a point — your position.
+
+## Why This Matters
+
+**It works indoors.** Cell tower and FM signals penetrate buildings. GPS does not. A SoOP-based system can position you inside a warehouse, a parking garage, or a basement.
+
+**It cannot be easily jammed.** GPS operates on a handful of frequencies from distant satellites with weak signals — easy to overpower with a cheap jammer. SoOP uses dozens of signal sources across a wide frequency range from nearby, high-power transmitters. Jamming all of them simultaneously is impractical.
+
+**It is GPS-independent.** When GPS is unavailable — whether from jamming, spoofing, solar storms, or simply being indoors — SoOP provides an independent positioning source.
+
+**No licensing required.** SoOP receivers only listen. They never transmit. Receiving radio signals is legal without a license everywhere in the world.
+
+## Making It a Network
+
+A single SoOP receiver can estimate its position given enough nearby transmitters with known locations. But Azimuth goes further: by crowdsourcing observations from thousands of receivers, the network builds a living radio environment map.
+
+This map captures not just transmitter locations, but signal propagation characteristics — how signals bounce off buildings, how they attenuate through walls, how the radio environment changes with time of day and weather. The more nodes contribute, the more accurate the map becomes, and the more accurate every position estimate becomes.
+
+This is the DePIN model applied to positioning: every node that joins the network makes the network more valuable for everyone.

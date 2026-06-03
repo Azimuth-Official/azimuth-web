@@ -1,0 +1,51 @@
+# Signal Targets
+
+Azimuth nodes listen to multiple signal types simultaneously. Each signal type offers different characteristics in terms of precision, coverage, and availability.
+
+## LTE
+
+LTE cell towers broadcast Primary and Secondary Synchronization Signals (PSS/SSS) for coarse timing and Cell-specific Reference Signals (CRS) for fine timing. Where available, Positioning Reference Signals (PRS) provide even higher precision.
+
+**Why LTE is ideal for positioning:** Cell towers are precisely surveyed, have known locations in public databases, broadcast continuously with stable timing, and are densely deployed in urban areas.
+
+- **Frequency range:** 700 MHz – 2.6 GHz (Bands 12/13/14/71 in US, 20/28 in EU)
+- **Typical power:** 20–60 watts per sector
+- **Coverage:** 1–30 km per tower depending on environment
+- **Timing precision:** 10–50 nanoseconds (CRS), sub-10 ns (PRS)
+
+## 5G NR
+
+5G New Radio synchronization signals offer wider bandwidth than LTE, translating directly to better timing precision. The move to millimeter wave frequencies in some deployments provides extremely precise timing but with reduced range.
+
+- **Frequency range:** Sub-6 GHz (FR1) and 24–52 GHz (FR2/mmWave)
+- **Typical power:** 10–40 watts (FR1), 1–5 watts (FR2)
+- **Coverage:** 100m–10 km depending on band
+- **Timing precision:** Sub-10 nanoseconds (FR1), sub-nanosecond (FR2)
+
+## Digital Television
+
+ATSC (North America) and DVB-T/T2 (Europe, much of the world) transmitters broadcast high-power signals with embedded pilot sequences. These signals cover vast areas from hilltop transmitter sites.
+
+**Advantage:** Extremely high power means DTV signals penetrate buildings well and can be received at distances exceeding 100 km from the transmitter.
+
+- **Frequency range:** 470–806 MHz (UHF)
+- **Typical power:** 50 kW – 1 MW ERP
+- **Coverage:** 50–150 km
+- **Timing precision:** 50–200 nanoseconds
+
+## FM Radio
+
+FM radio with Radio Data System (RDS) subcarriers provides the most ubiquitous signal source. While timing precision is lower than cellular or DTV, FM coverage is nearly universal.
+
+- **Frequency range:** 87.5–108 MHz
+- **Typical power:** 1–100 kW ERP
+- **Coverage:** 30–100 km
+- **Timing precision:** 100–500 nanoseconds
+
+## LEO Satellites (Future)
+
+Planned support for Low Earth Orbit satellite downlinks — including Starlink and Iridium — will add sky-to-ground timing measurements. LEO satellites move rapidly, providing geometric diversity that improves positioning accuracy.
+
+- **Status:** Research phase. Expected in a future network upgrade.
+- **Frequency range:** Ku-band (10.7–12.7 GHz) for Starlink, L-band (1616–1626.5 MHz) for Iridium
+- **Advantage:** Global coverage including oceans, deserts, and polar regions where terrestrial signals are absent

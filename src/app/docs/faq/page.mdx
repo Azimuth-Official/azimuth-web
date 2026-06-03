@@ -1,0 +1,86 @@
+export const metadata = {
+  title: "FAQ",
+  description: "Common questions about Azimuth: licensing, hardware, accuracy, blockchain, and how to get started.",
+  alternates: { canonical: "https://azimuth.day/docs/faq" },
+  openGraph: {
+    title: "FAQ",
+    description: "Common questions about Azimuth: licensing, hardware, accuracy, blockchain, and how to get started.",
+    url: "https://azimuth.day/docs/faq",
+  },
+  twitter: {
+    title: "FAQ",
+    description: "Common questions about Azimuth: licensing, hardware, accuracy, blockchain, and how to get started.",
+  },
+};
+
+import JsonLd from "@/components/JsonLd";
+
+<JsonLd data={{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Do I need a license to run an Azimuth node?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No. Azimuth nodes only receive radio signals — they never transmit. Receiving radio signals is legal without a license in all major jurisdictions worldwide."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What hardware do I need for an Azimuth node?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "At minimum: an RTL-SDR V4 USB dongle (~$30) and any Windows or Linux computer with a USB port."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Does Azimuth replace GPS?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Azimuth provides an independent positioning source that works when GPS is unavailable, jammed, or spoofed. Applications can use Azimuth alongside GPS for more robust positioning."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How accurate is Azimuth positioning?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "The target is 10-100 meters with sufficient network coverage, improving over time as more nodes come online and the radio environment map becomes more detailed."
+      }
+    }
+  ]
+}} />
+
+
+# Frequently Asked Questions
+
+## Do I need a license to run a node?
+
+No. Azimuth nodes only receive radio signals — they never transmit. Receiving radio signals is legal without a license in all major jurisdictions worldwide. This is the key advantage of the signals-of-opportunity approach.
+
+## What hardware do I need?
+
+At minimum: an RTL-SDR V4 USB dongle (~$30) and any Windows or Linux computer with a USB port. The stock dipole antenna works for getting started, though a wideband antenna placed near a window improves results significantly. See the [Setup Guide](/guides/quickstart) for details.
+
+## Does this replace GPS?
+
+Azimuth complements GPS rather than replacing it. It provides an independent positioning source that works when GPS is unavailable (indoors, urban canyons), jammed, or spoofed. Applications can use Azimuth alongside GPS for more robust positioning.
+
+## What signals does the node listen to?
+
+LTE and 5G cell tower reference signals, digital television (ATSC/DVB-T) pilots, and FM radio RDS subcarriers. Future support for LEO satellite downlinks is planned. See [Signal Targets](/docs/signals) for technical details on each signal type.
+
+## How accurate is positioning?
+
+Accuracy depends on node density and signal diversity in a given area. The target is 10–100 meters with sufficient network coverage, improving over time as more nodes come online and the radio environment map becomes more detailed.
+
+## Which blockchain will Azimuth use?
+
+Chain selection is in progress. The team is evaluating options based on transaction costs, finality speed, and ecosystem fit. Follow announcements for updates.
+
+## Who is behind Azimuth?
+
+Azimuth is built by a small team of RF engineers and distributed systems developers. The team operates pseudonymously to keep the focus on the technology rather than individuals.

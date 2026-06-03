@@ -1,0 +1,41 @@
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Guides",
+  description: "Step-by-step instructions for setting up and running Azimuth nodes.",
+};
+
+export default function GuidesLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="min-h-screen bg-navy">
+      <main className="max-w-4xl mx-auto px-6 py-12 prose prose-invert prose-lg">
+        <div className="mb-8">
+          <a
+            href="/guides"
+            className="inline-flex items-center gap-2 text-amber-500 hover:text-amber-400 transition-colors"
+          >
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 19l-7-7 7-7"
+              />
+            </svg>
+            Back to Guides
+          </a>
+        </div>
+        {children}
+      </main>
+    </div>
+  );
+}

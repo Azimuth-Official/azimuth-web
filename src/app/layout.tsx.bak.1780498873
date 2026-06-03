@@ -1,0 +1,62 @@
+import type { Metadata } from "next";
+import { Inter, JetBrains_Mono } from "next/font/google";
+import "./globals.css";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
+
+const inter = Inter({
+  variable: "--font-inter",
+  subsets: ["latin"],
+  display: "swap",
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  variable: "--font-jetbrains-mono",
+  subsets: ["latin"],
+  display: "swap",
+});
+
+export const metadata: Metadata = {
+  metadataBase: new URL("https://azimuth.day"),
+  title: {
+    default: "Azimuth — Decentralized Positioning & Timing",
+    template: "%s | Azimuth",
+  },
+  description:
+    "A DePIN of passive SDR receivers building a global positioning layer from signals of opportunity.",
+  openGraph: {
+    title: "Azimuth — Decentralized Positioning & Timing",
+    description:
+      "A DePIN of passive SDR receivers building a global positioning layer from signals of opportunity.",
+    siteName: "Azimuth",
+    locale: "en_US",
+    type: "website",
+    images: [{ url: "/logo-og.png", width: 1200, height: 630, alt: "Azimuth" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Azimuth — Decentralized Positioning & Timing",
+    description:
+      "A DePIN of passive SDR receivers building a global positioning layer from signals of opportunity.",
+    images: ["/logo-og.png"],
+  },
+};
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <html
+      lang="en"
+      className={`${inter.variable} ${jetbrainsMono.variable} h-full antialiased`}
+    >
+      <body className="min-h-full flex flex-col font-sans">
+        <Navbar />
+        <main className="flex-1">{children}</main>
+        <Footer />
+      </body>
+    </html>
+  );
+}

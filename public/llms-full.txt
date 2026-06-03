@@ -1,0 +1,43 @@
+# Azimuth — Full Reference
+
+> A decentralized positioning and timing network built on signals of opportunity.
+
+[See llms.txt for concise version and LLM agent instructions](https://azimuth.day/llms.txt)
+
+## Page Summaries
+
+### / (Home)
+Landing page introducing Azimuth as a decentralized alternative to GPS. Explains the core concept: passive SDR receivers capture timing from ambient radio signals (LTE, DTV, FM) to compute position fixes without transmitting. Covers the four-step process (listen, timestamp, submit, solve), three signal target categories, two node tiers, and live network statistics.
+
+### /litepaper
+Five-minute overview of why GPS is a single point of failure, how signals of opportunity work as an alternative, and how Azimuth's decentralized network of passive receivers builds a positioning layer from existing radio infrastructure. Covers the problem (GPS fragility, jamming, spoofing), the solution (SoOP-based positioning), network architecture, and token economics at a high level.
+
+### /whitepaper
+Full technical specification covering signal processing pipeline, TDOA multilateration algorithms, node hardware requirements, consensus mechanism for observation validation, network topology, security model, and economic design. The most comprehensive technical document on the site (~3600 words).
+
+### /docs/architecture
+Four-layer system design: Node Layer (SDR receivers capturing timestamps), Transport Layer (observation submission), Processing Layer (TDOA computation, radio environment mapping, signal fingerprinting, cross-validation), and Query Layer (positioning API). Describes how data flows from raw RF capture through validated position fixes.
+
+### /docs/signals
+Technical breakdown of signal categories: LTE/5G (cell tower reference signals, 10-50ns precision), Digital Television (ATSC/DVB-T pilots, high-power 50kW-1MW, 50-150km range), FM Radio (RDS subcarriers, ubiquitous coverage), and planned LEO satellite support (Starlink/Iridium downlinks). Compares bandwidth, update rate, and geographic coverage for each.
+
+### /docs/tokenomics
+Token utility: node operator rewards (proportional to data quality), query payments (positioning API access), and governance. Reward factors include coverage area, uptime, data quality, and signal diversity. Tier multipliers: Tier 1 baseline, Tier 2 enhanced, Tier 3 premium. Anti-Sybil via GPS-disciplined cross-validation and signal fingerprinting. Detailed tokenomics to be published before mainnet.
+
+### /docs/faq
+Answers to common questions: no license needed (receive-only), minimum hardware is RTL-SDR V4 (~$30) plus any computer, complements GPS rather than replacing it, targets 10-100m accuracy with sufficient coverage, chain selection in progress, team operates pseudonymously.
+
+### /guides/quickstart
+Step-by-step Tier 1 BYOD setup: RTL-SDR V4 dongle, stock dipole antenna, Windows/Linux install, account creation at localhost:8080, signal verification within 60 seconds. Optimization tips for antenna placement. Hardware compatibility table (RTL-SDR V4 recommended, V3 supported). Troubleshooting for no-signal, USB errors, and driver conflicts.
+
+### /guides/tier2-setup
+Placeholder for Tier 2 dedicated node setup. Hardware package will include: single-board computer, RTL-SDR V4, GPS-disciplined oscillator for nanosecond timing, outdoor antenna with weatherproof enclosure, pre-configured software image. Higher rewards due to GPS-disciplined timing precision.
+
+### /blog/welcome
+Introductory blog post announcing Azimuth. Frames the problem of GPS dependency and vulnerability to jamming/spoofing. Introduces signals-of-opportunity approach as a decentralized alternative. Outlines the path from concept to testnet to mainnet.
+
+### /blog/soop-explained
+Technical explainer on signals of opportunity (SoOP). Every cell tower, TV transmitter, and FM station broadcasts timing signals continuously. Azimuth nodes passively receive these signals and extract precise timestamps. Multiple timestamps from different transmitters enable trilateration without GPS. Explains why receive-only operation requires no license.
+
+### /dashboard
+Web application for node operators. Connect wallet to monitor node status, view earned rewards, and manage settings. Requires wallet connection — functional application page, not informational content.

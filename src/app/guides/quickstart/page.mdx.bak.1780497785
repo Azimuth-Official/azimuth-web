@@ -1,0 +1,95 @@
+# Quick Start — Tier 1 BYOD
+
+Get your Azimuth node running in minutes with minimal hardware.
+
+## 1. Hardware
+
+Get an RTL-SDR V4 USB dongle (~$30, available from rtl-sdr.com or Amazon). Any computer with a USB 2.0 or higher port running Windows 10+ or Linux will work.
+
+## 2. Antenna
+
+The stock dipole antenna included with the RTL-SDR V4 works for getting started. For better results:
+
+- **Wideband discone antenna** — covers all target frequencies simultaneously
+- **Magnetic mount antenna** — easy to place near a window or on a metal surface
+- Place the antenna near a window or outdoors for best reception
+
+## 3. Software — Windows
+
+1. Download the Azimuth daemon installer (link available at launch)
+2. Run the installer and follow the prompts
+3. Plug in your RTL-SDR dongle
+4. Launch Azimuth from the Start menu
+
+## 4. Software — Linux
+
+```bash
+# Install script (available at launch)
+curl -sSL https://azimuth.day/install.sh | bash
+```
+
+Plug in your RTL-SDR dongle, then start the daemon:
+
+```bash
+azimuth start
+```
+
+## 5. Create Your Account
+
+Open the local dashboard at `http://localhost:8080` in your browser. Create your Azimuth account and link your wallet address to receive rewards.
+
+## 6. Verify
+
+The dashboard shows signal acquisition status. You should see LTE cell IDs appearing within 60 seconds if cell towers are in range. The signal list updates in real time.
+
+## 7. Optimize
+
+- **Window placement:** Moving the antenna to a window dramatically improves signal count
+- **Rooftop placement:** Outdoor antennas see 3–5x more signals than indoor
+- **Elevation:** Higher placement generally means more signals
+- **Multiple signal types:** A wideband antenna captures LTE, DTV, and FM simultaneously
+
+## Hardware Compatibility
+
+<table>
+  <thead>
+    <tr>
+      <th>Device</th>
+      <th>Status</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>RTL-SDR V4</td>
+      <td>Recommended</td>
+    </tr>
+    <tr>
+      <td>RTL-SDR V3</td>
+      <td>Supported</td>
+    </tr>
+    <tr>
+      <td>Other RTL2832U dongles</td>
+      <td>May work with reduced performance</td>
+    </tr>
+    <tr>
+      <td>Airspy / SDRplay</td>
+      <td>Future support planned</td>
+    </tr>
+  </tbody>
+</table>
+
+## Troubleshooting
+
+**No signals detected:**
+- Ensure the antenna is connected and the dongle is plugged in
+- Move the antenna closer to a window
+- Check that no other software is using the SDR device
+
+**USB errors:**
+- Try a different USB port (preferably USB 3.0)
+- On Windows, install the Zadig USB driver if prompted
+- On Linux, ensure your user is in the `plugdev` group
+
+**Driver conflicts (Windows):**
+- If you have SDR# or other SDR software installed, it may have conflicting drivers
+- The Azimuth installer will attempt to configure drivers automatically

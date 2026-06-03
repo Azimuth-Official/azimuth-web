@@ -1,0 +1,19 @@
+{
+  "name": "Azimuth",
+  "description": "A decentralized positioning and timing network built on signals of opportunity.",
+  "url": "https://azimuth.day",
+  "documentation": {
+    "llms_txt": "https://azimuth.day/llms.txt",
+    "llms_full_txt": "https://azimuth.day/llms-full.txt",
+    "sitemap": "https://azimuth.day/sitemap.xml",
+    "pages": {
+      "litepaper": "https://azimuth.day/litepaper",
+      "whitepaper": "https://azimuth.day/whitepaper",
+      "architecture": "https://azimuth.day/docs/architecture",
+      "signals": "https://azimuth.day/docs/signals",
+      "tokenomics": "https://azimuth.day/docs/tokenomics",
+      "faq": "https://azimuth.day/docs/faq",
+      "quickstart": "https://azimuth.day/guides/quickstart"
+    }
+  }
+}
