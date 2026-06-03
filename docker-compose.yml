@@ -1,8 +1,9 @@
 services:
   azimuth-web:
     build: .
-    ports:
-      - "3000:3000"
+    network_mode: host
     restart: unless-stopped
     environment:
-      - NODE_ENV=production
+      DATABASE_URL: ${DATABASE_URL}
+      NODE_ENV: production
+      HOSTNAME: "0.0.0.0"
