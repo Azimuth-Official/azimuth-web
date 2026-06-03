@@ -1,0 +1,148 @@
+export const metadata = {
+  title: "Tier 0 — Mobile Observer",
+  description: "Turn your Android phone into an Azimuth node. Collect cell tower, GNSS, and WiFi data with zero hardware cost.",
+  alternates: { canonical: "https://azimuth.day/guides/tier0-setup" },
+  openGraph: {
+    title: "Tier 0 — Mobile Observer",
+    description: "Turn your Android phone into an Azimuth node. Collect cell tower, GNSS, and WiFi data with zero hardware cost.",
+    url: "https://azimuth.day/guides/tier0-setup",
+  },
+  twitter: {
+    title: "Tier 0 — Mobile Observer",
+    description: "Turn your Android phone into an Azimuth node. Collect cell tower, GNSS, and WiFi data with zero hardware cost.",
+  },
+};
+
+# Tier 0 — Mobile Observer
+
+Turn your Android phone into an Azimuth node with zero hardware cost.
+
+## What Tier 0 Does
+
+Your phone passively collects radio environment data that helps Azimuth build and maintain an accurate map of the signal landscape. This map is the foundation that Tier 1+ SDR nodes use to resolve their timing observations into position fixes.
+
+**Data collected:**
+
+- **Cell tower surveys** — cell ID, signal strength (RSRP/RSRQ/SINR), timing advance, physical cell ID, carrier frequency
+- **GNSS raw measurements** — satellite pseudoranges, carrier phase, Doppler shift, carrier-to-noise density (CN0)
+- **WiFi signal surveys** — visible access points, signal strength, channel, frequency band
+- **WiFi RTT** — precise distance measurements to compatible access points (where hardware supports it)
+
+All observations are tagged with your GPS coordinates and a timestamp. The app only receives — it never transmits on any radio frequency.
+
+## Requirements
+
+<table>
+  <thead>
+    <tr>
+      <th>Requirement</th>
+      <th>Details</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Android version</td>
+      <td>8.0 (Oreo) or newer — API level 26+</td>
+    </tr>
+    <tr>
+      <td>GNSS raw measurements</td>
+      <td>Android 7.0+ with hardware support (most phones from 2017 onward)</td>
+    </tr>
+    <tr>
+      <td>WiFi RTT</td>
+      <td>Android 9.0+ with IEEE 802.11mc hardware (optional — enhances data quality)</td>
+    </tr>
+    <tr>
+      <td>Storage</td>
+      <td>~50 MB for the app, plus observation cache</td>
+    </tr>
+    <tr>
+      <td>Internet</td>
+      <td>WiFi or mobile data for uploading observations</td>
+    </tr>
+    <tr>
+      <td>Cost</td>
+      <td>Free — use the phone you already have</td>
+    </tr>
+  </tbody>
+</table>
+
+## 1. Install the App
+
+Download the Azimuth app from Google Play (link available at launch) or sideload the APK from the Azimuth website.
+
+## 2. Grant Permissions
+
+The app requests these permissions on first launch:
+
+- **Location (Fine)** — required to GPS-tag observations and access cell/WiFi survey data
+- **Phone** — required to read cell tower information (CellInfo API)
+- **Nearby WiFi devices** — required for WiFi signal surveys on Android 13+
+
+All permissions are standard Android APIs. The app does not access your contacts, messages, camera, or any personal data.
+
+## 3. Connect Your Wallet
+
+Open the app settings and link your Algorand wallet address. This is where your observation rewards will be sent. You can use Pera Wallet, Defly, or any Algorand-compatible wallet.
+
+## 4. Start Observing
+
+Tap **Start** on the main screen. The app begins collecting observations in the background. You can use your phone normally — the data collection runs as a lightweight background service.
+
+The dashboard shows:
+
+- Number of observations collected this session
+- Cell towers currently visible
+- GNSS satellites being tracked
+- WiFi access points surveyed
+- Upload status and reward balance
+
+## 5. Optimize Your Contribution
+
+- **Walk or drive** — mobile observations across different locations are more valuable than stationary ones
+- **Outdoor time** — better GNSS reception means higher-quality raw measurements
+- **Dense urban areas** — more cell towers and WiFi APs mean richer observation data
+- **Keep the app running** — consistent uptime earns an uptime bonus
+
+## Rewards
+
+Tier 0 rewards are lower per observation than Tier 1+ because mobile phone data has lower timing precision than SDR measurements. However, Tier 0 data is uniquely valuable for building the radio environment map — cell tower surveys and WiFi fingerprints from diverse locations fill gaps that stationary SDR nodes cannot.
+
+**Reward factors:**
+
+- **Coverage value** — observations from underserved areas earn more
+- **Mobility diversity** — observations from many locations earn a diversity bonus
+- **Data completeness** — phones that provide GNSS raw measurements and WiFi RTT earn more than those providing cell surveys only
+- **Uptime** — consistent operation earns a reliability bonus
+
+## Upgrade Path
+
+When you see the reward potential and want to earn more, upgrading to Tier 1 is straightforward:
+
+1. Purchase an RTL-SDR V4 dongle (~$30)
+2. Plug it into any Windows or Linux computer
+3. Follow the [Tier 1 Quick Start guide](/guides/quickstart)
+
+Tier 1 nodes capture SDR timing signals (LTE, DTV, FM) that enable precise TDOA positioning — a fundamentally different and more valuable data type than mobile phone surveys. Many Tier 0 contributors convert to Tier 1 when they see the reward differential.
+
+## Troubleshooting
+
+**No cell tower data:**
+- Ensure Location and Phone permissions are granted
+- Some phones restrict background location access — check your battery optimization settings
+- Disable battery saver mode while the app is running
+
+**No GNSS raw measurements:**
+- Your phone may not support the GnssMeasurement API (check the app's diagnostic screen)
+- GNSS raw measurements require clear sky visibility — step outdoors
+- Some manufacturer ROMs disable raw measurement access; stock Android is most reliable
+
+**High battery usage:**
+- The app is designed for low power consumption, but GNSS tracking does use battery
+- Use the app's scheduled collection mode to observe in intervals rather than continuously
+- Keep your phone plugged in when possible during observation sessions
+
+**Observations not uploading:**
+- Check your internet connection (WiFi or mobile data required)
+- Observations are cached locally and uploaded in batches — a brief delay is normal
+- If uploads consistently fail, check the app's network settings

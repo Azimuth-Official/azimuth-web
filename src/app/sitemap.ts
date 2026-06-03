@@ -16,6 +16,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${baseUrl}/blog/welcome`, lastModified: now, changeFrequency: "yearly", priority: 0.6 },
     { url: `${baseUrl}/blog/soop-explained`, lastModified: now, changeFrequency: "yearly", priority: 0.6 },
     { url: `${baseUrl}/guides`, lastModified: now, changeFrequency: "weekly", priority: 0.8 },
+    { url: `${baseUrl}/guides/tier0-setup`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
     { url: `${baseUrl}/guides/quickstart`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
     { url: `${baseUrl}/guides/tier2-setup`, lastModified: now, changeFrequency: "monthly", priority: 0.5 },
   ];

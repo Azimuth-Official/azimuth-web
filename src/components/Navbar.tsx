@@ -55,7 +55,7 @@ export default function Navbar() {
             Dashboard
           </Link>
           <Link
-            href="/guides/quickstart"
+            href="/guides"
             className="text-slate-400 hover:text-slate-100 transition-colors"
           >
             Setup Guide
@@ -65,7 +65,7 @@ export default function Navbar() {
         {/* CTA Button (Desktop) */}
         <div className="hidden md:block">
           <Button
-            href="/guides/quickstart"
+            href="/guides"
             size="md"
             variant="primary"
           >
@@ -143,14 +143,14 @@ export default function Navbar() {
               Dashboard
             </Link>
             <Link
-              href="/guides/quickstart"
+              href="/guides"
               className="text-slate-400 hover:text-slate-100 transition-colors"
               onClick={() => setIsOpen(false)}
             >
               Setup Guide
             </Link>
             <Button
-              href="/guides/quickstart"
+              href="/guides"
               size="md"
               variant="primary"
               className="w-full justify-center"

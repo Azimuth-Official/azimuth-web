@@ -540,7 +540,27 @@ export default function WhitepaperPage() {
             {/* 4.2 Node Tiers */}
             <div id="node-tiers" className="mb-12 scroll-mt-24">
               <h3 className="text-xl font-bold text-slate-100 mb-6">4.2 Node Tiers</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+                {/* Tier 0 */}
+                <div className="bg-surface border border-border border-t-2 border-t-teal-500 rounded-xl p-6">
+                  <h4 className="text-lg font-bold text-slate-100 mb-2">
+                    Tier 0 — Mobile Observer
+                  </h4>
+                  <p className="text-amber-500 text-sm font-semibold mb-3">Free</p>
+                  <p className="text-slate-400 text-sm mb-4">
+                    The onramp. Users run the Azimuth Android app on their existing phone — no
+                    hardware purchase required. The app passively collects cell tower survey data
+                    (CellInfo: cell ID, RSRP/RSRQ/SINR, timing advance, PCI, carrier frequency),
+                    GNSS raw measurements (pseudoranges, carrier phase, Doppler, CN0 via Android
+                    GnssMeasurement API), WiFi signal surveys, and WiFi RTT where supported. All
+                    observations are GPS-tagged. This data builds the radio environment map that
+                    Tier 1+ SDR nodes&apos; timing observations are resolved against.
+                  </p>
+                  <div className="pt-3 border-t border-border text-xs text-slate-500 font-mono">
+                    Android 8.0+ · Cell/GNSS/WiFi · GPS-tagged · $0
+                  </div>
+                </div>
+
                 {/* Tier 1 */}
                 <div className="bg-surface border border-border border-t-2 border-t-amber-500 rounded-xl p-6">
                   <h4 className="text-lg font-bold text-slate-100 mb-2">
@@ -548,8 +568,8 @@ export default function WhitepaperPage() {
                   </h4>
                   <p className="text-amber-500 text-sm font-semibold mb-3">~$30</p>
                   <p className="text-slate-400 text-sm mb-4">
-                    The entry point. Participants plug a $30 RTL-SDR V4 dongle into any Windows or
-                    Linux machine, install the Azimuth daemon, and begin observing. The RTL-SDR V4
+                    The SDR entry point. Participants plug a $30 RTL-SDR V4 dongle into any Windows
+                    or Linux machine, install the Azimuth daemon, and begin observing. The RTL-SDR V4
                     covers 500 kHz to 1.766 GHz with 2.4 MHz instantaneous bandwidth — sufficient to
                     acquire LTE synchronization signals, FM RDS, and DTV pilots. Timing is derived
                     from the host system clock with NTP discipline.
@@ -594,11 +614,13 @@ export default function WhitepaperPage() {
                 </div>
               </div>
               <p className="text-slate-400 leading-relaxed">
-                This tiered approach is deliberate. Tier 1 enables mass adoption by leveraging
-                hardware many SDR enthusiasts already own, seeding the network with geographic
-                density. Tiers 2 and 3 add precision and capability at the margins, improving the
-                quality of the observation dataset without requiring everyone to invest in
-                specialized equipment.
+                This tiered approach is deliberate. Tier 0 eliminates the cost barrier entirely,
+                turning every Android phone into a passive observer that enriches the radio
+                environment map. Tier 1 enables mass SDR adoption by leveraging hardware many
+                enthusiasts already own, seeding the network with geographic density. Tiers 2 and 3
+                add precision and capability at the margins, improving the quality of the observation
+                dataset without requiring everyone to invest in specialized equipment. Many Tier 0
+                contributors convert to Tier 1 when they see the reward differential.
               </p>
             </div>
 

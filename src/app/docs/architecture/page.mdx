@@ -33,9 +33,15 @@ Azimuth operates as a four-layer system that transforms ambient radio signals in
 
 ## Node Layer
 
-SDR receivers deployed by node operators passively capture timing information from signals of opportunity — LTE/5G cell tower reference signals, digital television pilots, and FM radio subcarriers. Each node extracts precise timestamps from these signals without transmitting anything.
+Azimuth nodes passively capture radio environment data without transmitting anything. The network supports four tiers of participation:
 
-Nodes range from simple USB SDR dongles connected to consumer hardware (Tier 1) to dedicated units with GPS-disciplined oscillators and outdoor antennas (Tier 2) to multi-channel coherent arrays capable of both time and angle measurements (Tier 3).
+**Tier 0 — Mobile Observer.** The zero-cost entry point. Users run the Azimuth Android app on their existing phone, which passively collects cell tower survey data (CellInfo: cell ID, RSRP/RSRQ/SINR, timing advance, PCI, carrier frequency), GNSS raw measurements (pseudoranges, carrier phase, Doppler, CN0), WiFi signal surveys, and WiFi RTT where supported. All observations are GPS-tagged. This data builds the radio environment map — the contextual layer that Tier 1+ SDR timing observations are resolved against.
+
+**Tier 1 — BYOD.** SDR receivers deployed by node operators capture timing information from signals of opportunity — LTE/5G cell tower reference signals, digital television pilots, and FM radio subcarriers. Simple USB SDR dongles (RTL-SDR V4, ~$30) connected to consumer hardware extract precise timestamps from these signals.
+
+**Tier 2 — Dedicated Node.** Purpose-built units with GPS-disciplined oscillators and outdoor antennas provide nanosecond-class timing accuracy and 24/7 unattended operation.
+
+**Tier 3 — Coherent Array.** Multi-channel coherent SDR receivers with antenna arrays capable of both time-difference and angle-of-arrival measurements, enabling interferometric positioning techniques.
 
 ## Transport Layer
 

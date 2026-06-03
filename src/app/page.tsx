@@ -26,11 +26,11 @@ export default function Home() {
             positioning and timing layer — without transmitting a single watt.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button href="/guides/quickstart" size="lg" variant="primary">
-              Start Earning
+            <Button href="/guides/tier0-setup" size="lg" variant="primary">
+              Get the App
             </Button>
-            <Button href="/docs" size="lg" variant="outline">
-              Read the Docs
+            <Button href="/guides/quickstart" size="lg" variant="outline">
+              SDR Setup Guide
             </Button>
           </div>
         </div>
@@ -152,7 +152,38 @@ export default function Home() {
       <section className="py-24 px-6 bg-navy">
         <div className="max-w-7xl mx-auto">
           <SectionHeading title="Node Tiers" centered />
-          <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="mt-16 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {/* Tier 0 - Mobile Observer */}
+            <div className="relative">
+              <Card
+                accentTop
+                hover
+                className="border-2 border-teal-500 relative"
+              >
+                <div className="absolute top-0 right-0 transform translate-x-2 -translate-y-1/2">
+                  <span className="bg-teal-500 text-slate-900 text-xs font-bold px-3 py-1 rounded-full">
+                    Available at launch
+                  </span>
+                </div>
+                <h3 className="text-xl font-bold text-slate-100 mb-3">
+                  Tier 0 — Mobile Observer
+                </h3>
+                <p className="text-amber-500 text-sm font-semibold mb-3">
+                  Free
+                </p>
+                <p className="text-slate-400 mb-4">
+                  Run the Azimuth app on your Android phone. Passively collects
+                  cell tower, GNSS, and WiFi survey data to build the radio
+                  environment map. Zero hardware cost.
+                </p>
+                <div className="pt-4 border-t border-border">
+                  <p className="text-slate-500 text-sm font-semibold">
+                    Your phone is all you need
+                  </p>
+                </div>
+              </Card>
+            </div>
+
             {/* Tier 1 - BYOD */}
             <div className="relative">
               <Card
@@ -169,15 +200,16 @@ export default function Home() {
                   Tier 1 — BYOD
                 </h3>
                 <p className="text-amber-500 text-sm font-semibold mb-3">
-                  Free
+                  ~$30
                 </p>
                 <p className="text-slate-400 mb-4">
-                  Plug an RTL-SDR V4 dongle ($30) into any Windows or Linux
-                  machine. Install the Azimuth daemon. Start earning.
+                  Plug an RTL-SDR V4 dongle into any Windows or Linux
+                  machine. Install the Azimuth daemon. Capture SDR signals
+                  for higher rewards.
                 </p>
                 <div className="pt-4 border-t border-border">
                   <p className="text-slate-500 text-sm font-semibold">
-                    Start here
+                    Upgrade from Tier 0
                   </p>
                 </div>
               </Card>
@@ -314,16 +346,26 @@ export default function Home() {
             Ready to Join?
           </h2>
           <p className="text-slate-900 text-lg mb-8">
-            All you need is an RTL-SDR dongle and a computer.
+            Start with just your phone — or plug in an SDR dongle for more.
           </p>
-          <Button
-            href="/guides/quickstart"
-            size="lg"
-            variant="ghost"
-            className="bg-slate-900 text-amber-500 hover:bg-slate-800"
-          >
-            Get Started
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button
+              href="/guides/tier0-setup"
+              size="lg"
+              variant="ghost"
+              className="bg-slate-900 text-amber-500 hover:bg-slate-800"
+            >
+              Get the App (Free)
+            </Button>
+            <Button
+              href="/guides/quickstart"
+              size="lg"
+              variant="ghost"
+              className="bg-slate-900/60 text-amber-500 hover:bg-slate-800/80"
+            >
+              SDR Setup (~$30)
+            </Button>
+          </div>
         </div>
       </section>
     </div>

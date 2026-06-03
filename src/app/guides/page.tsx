@@ -19,7 +19,14 @@ export const metadata: Metadata = {
 export default function GuidesIndex() {
   const guides = [
     {
-      title: 'Quick Start — Tier 1 BYOD',
+      title: 'Tier 0 — Mobile Observer',
+      description: 'Turn your Android phone into an Azimuth node. Zero hardware cost.',
+      href: '/guides/tier0-setup',
+      badge: 'Available',
+      badgeColor: 'bg-teal-500/10 text-teal-500',
+    },
+    {
+      title: 'Tier 1 — BYOD (SDR Dongle)',
       description: 'Get up and running with a $30 SDR dongle in minutes.',
       href: '/guides/quickstart',
       badge: 'Available',
