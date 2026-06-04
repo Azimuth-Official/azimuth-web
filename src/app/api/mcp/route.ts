@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { contentIndex, searchContent } from "@/lib/content-index";
 
+export const dynamic = 'force-dynamic';
+
 // JSON-RPC 2.0 request/response types
 interface JsonRpcRequest {
   jsonrpc: "2.0";

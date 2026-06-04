@@ -3,6 +3,8 @@ import pool from '@/lib/db';
 import { authenticateRequest } from '@/lib/auth';
 import type { ListNodesResponse, ApiError } from '@/lib/types';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   const auth = await authenticateRequest(request);
   if (auth instanceof NextResponse) return auth;
