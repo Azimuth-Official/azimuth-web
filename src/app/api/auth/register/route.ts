@@ -14,8 +14,26 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { wallet_address } = body;
-  if (!wallet_address || wallet_address.length < 58) {
+  const { email, wallet_address } = body;
+
+  // Require at least one identifier
+  if (!email && !wallet_address) {
+    return NextResponse.json<ApiError>(
+      { error: 'Either email or wallet_address is required' },
+      { status: 400 },
+    );
+  }
+
+  // Validate email format if provided
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return NextResponse.json<ApiError>(
+      { error: 'Invalid email format' },
+      { status: 400 },
+    );
+  }
+
+  // Validate wallet_address if provided (legacy)
+  if (wallet_address && wallet_address.length < 58) {
     return NextResponse.json<ApiError>(
       { error: 'Invalid wallet_address' },
       { status: 400 },
@@ -26,15 +44,29 @@ export async function POST(request: NextRequest) {
   try {
     await client.query('BEGIN');
 
-    // Upsert user
-    const userResult = await client.query(
-      `INSERT INTO users (wallet_address)
-       VALUES ($1)
-       ON CONFLICT (wallet_address) DO UPDATE SET updated_at = now()
-       RETURNING id`,
-      [wallet_address],
-    );
-    const userId = userResult.rows[0].id;
+    let userId: string;
+
+    if (email) {
+      // Upsert by email
+      const userResult = await client.query(
+        `INSERT INTO users (email)
+         VALUES ($1)
+         ON CONFLICT (email) DO UPDATE SET updated_at = now()
+         RETURNING id`,
+        [email],
+      );
+      userId = userResult.rows[0].id;
+    } else {
+      // Legacy: upsert by wallet_address
+      const userResult = await client.query(
+        `INSERT INTO users (wallet_address)
+         VALUES ($1)
+         ON CONFLICT (wallet_address) DO UPDATE SET updated_at = now()
+         RETURNING id`,
+        [wallet_address],
+      );
+      userId = userResult.rows[0].id;
+    }
 
     // Generate API key
     const apiKey = generateApiKey();

@@ -8,7 +8,7 @@ export const contentIndex: Record<string, ContentEntry> = {
   "/": {
     title: "Home",
     description: "Landing page introducing Azimuth as a decentralized alternative to GPS.",
-    content: "Landing page introducing Azimuth as a decentralized alternative to GPS. Explains the core concept: passive SDR receivers capture timing from ambient radio signals (LTE, DTV, FM) to compute position fixes without transmitting. Covers the four-step process (listen, timestamp, submit, solve), three signal target categories, two node tiers, and live network statistics.",
+    content: "Landing page introducing Azimuth as a decentralized alternative to GPS. Explains the core concept: passive SDR receivers capture timing from ambient radio signals (LTE, DTV, FM) to compute position fixes without transmitting. Covers the four-step process (listen, timestamp, submit, solve), three signal target categories, four node tiers, and live network statistics.",
   },
   "/litepaper": {
     title: "Litepaper",
@@ -33,12 +33,17 @@ export const contentIndex: Record<string, ContentEntry> = {
   "/docs/tokenomics": {
     title: "Tokenomics",
     description: "Token utility: node operator rewards, query payments, and governance.",
-    content: "Token utility: node operator rewards (proportional to data quality), query payments (positioning API access), and governance. Reward factors include coverage area, uptime, data quality, and signal diversity. Tier multipliers: Tier 1 baseline, Tier 2 enhanced, Tier 3 premium. Anti-Sybil via GPS-disciplined cross-validation and signal fingerprinting.",
+    content: "Token utility: node operator rewards (proportional to data quality), query payments (positioning API access), and governance. Reward factors include coverage area, uptime, data quality, and signal diversity. Tier multipliers: Tier 0 mobile, Tier 1 baseline, Tier 2 enhanced, Tier 3 premium. Anti-Sybil via GPS-disciplined cross-validation and signal fingerprinting.",
   },
   "/docs/faq": {
     title: "FAQ",
     description: "Answers to common questions about licenses, hardware requirements, and accuracy.",
     content: "Answers to common questions: no license needed (receive-only), minimum hardware is RTL-SDR V4 (~$30) plus any computer, complements GPS rather than replacing it, targets 10-100m accuracy with sufficient coverage, chain selection in progress, team operates pseudonymously.",
+  },
+  "/guides/tier0-setup": {
+    title: "Tier 0 Setup",
+    description: "Turn your Android phone into an Azimuth node with zero hardware cost.",
+    content: "Turn your Android phone into an Azimuth node. Collects cell tower surveys, GNSS raw measurements, WiFi signal surveys, and WiFi RTT. Zero hardware cost. Rewards based on coverage area, mobility diversity, data completeness, and uptime.",
   },
   "/guides/quickstart": {
     title: "Quickstart",
@@ -88,7 +93,7 @@ export const contentIndex: Record<string, ContentEntry> = {
   "/dashboard": {
     title: "Dashboard",
     description: "Web application for node operators to monitor status, view rewards, and manage settings.",
-    content: "Web application for node operators. Connect wallet to monitor node status, view earned rewards, and manage settings.",
+    content: "Web application for node operators. Sign in with email to monitor node status, view earned rewards, and manage settings.",
   },
 };
 

@@ -44,7 +44,8 @@ export type RewardStatus = 'pending' | 'distributed' | 'failed';
 
 // POST /api/auth/register
 export interface RegisterRequest {
-  wallet_address: string;
+  email?: string;
+  wallet_address?: string;
 }
 
 export interface RegisterResponse {
