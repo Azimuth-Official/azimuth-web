@@ -126,6 +126,27 @@ export interface SubmitObservationsRequest {
   observations: ObservationPayload[];
 }
 
+// GET /api/observations/mine
+export interface ObservationInfo {
+  id: string;
+  node_id: string;
+  signal_type: SignalType;
+  observed_at: string;
+  frequency_hz: number | null;
+  timestamp_ns: number | null;
+  tdoa_offset_ns: number | null;
+  signal_strength_dbm: number | null;
+  snr_db: number | null;
+  source_id: string | null;
+  raw_data: Record<string, unknown> | null;
+  created_at: string;
+}
+
+export interface ListObservationsResponse {
+  observations: ObservationInfo[];
+  total: number;
+}
+
 export interface SubmitObservationsResponse {
   accepted: number;
 }
