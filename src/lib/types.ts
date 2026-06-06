@@ -109,9 +109,10 @@ export interface ListNodesResponse {
 export interface ObservationPayload {
   signal_type: SignalType;
   observed_at: string; // ISO 8601
-  latitude: number;
-  longitude: number;
+  latitude?: number;
+  longitude?: number;
   accuracy?: number;
+  altitude?: number;
   frequency_hz?: number | null;
   timestamp_ns?: number | null;
   tdoa_offset_ns?: number | null;
@@ -119,6 +120,12 @@ export interface ObservationPayload {
   snr_db?: number | null;
   source_id?: string | null;
   raw_data?: Record<string, unknown> | null;
+  app_version?: string;
+  build_number?: string;
+  device_model?: string;
+  android_api_level?: number;
+  validation_status?: string;
+  client_dedupe_key?: string;
 }
 
 export interface SubmitObservationsRequest {

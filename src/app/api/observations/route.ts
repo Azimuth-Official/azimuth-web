@@ -76,6 +76,66 @@ export async function POST(request: NextRequest) {
         { status: 400 },
       );
     }
+    if (obs.latitude !== undefined && obs.latitude !== null && typeof obs.latitude !== 'number') {
+      return NextResponse.json<ApiError>(
+        { error: `Observation ${i}: latitude must be number or null` },
+        { status: 400 },
+      );
+    }
+    if (obs.longitude !== undefined && obs.longitude !== null && typeof obs.longitude !== 'number') {
+      return NextResponse.json<ApiError>(
+        { error: `Observation ${i}: longitude must be number or null` },
+        { status: 400 },
+      );
+    }
+    if (obs.accuracy !== undefined && obs.accuracy !== null && typeof obs.accuracy !== 'number') {
+      return NextResponse.json<ApiError>(
+        { error: `Observation ${i}: accuracy must be number or null` },
+        { status: 400 },
+      );
+    }
+    if (obs.altitude !== undefined && obs.altitude !== null && typeof obs.altitude !== 'number') {
+      return NextResponse.json<ApiError>(
+        { error: `Observation ${i}: altitude must be number or null` },
+        { status: 400 },
+      );
+    }
+    if (obs.app_version !== undefined && obs.app_version !== null && typeof obs.app_version !== 'string') {
+      return NextResponse.json<ApiError>(
+        { error: `Observation ${i}: app_version must be string or null` },
+        { status: 400 },
+      );
+    }
+    if (obs.build_number !== undefined && obs.build_number !== null && typeof obs.build_number !== 'string') {
+      return NextResponse.json<ApiError>(
+        { error: `Observation ${i}: build_number must be string or null` },
+        { status: 400 },
+      );
+    }
+    if (obs.device_model !== undefined && obs.device_model !== null && typeof obs.device_model !== 'string') {
+      return NextResponse.json<ApiError>(
+        { error: `Observation ${i}: device_model must be string or null` },
+        { status: 400 },
+      );
+    }
+    if (obs.android_api_level !== undefined && obs.android_api_level !== null && typeof obs.android_api_level !== 'number') {
+      return NextResponse.json<ApiError>(
+        { error: `Observation ${i}: android_api_level must be number or null` },
+        { status: 400 },
+      );
+    }
+    if (obs.validation_status !== undefined && obs.validation_status !== null && typeof obs.validation_status !== 'string') {
+      return NextResponse.json<ApiError>(
+        { error: `Observation ${i}: validation_status must be string or null` },
+        { status: 400 },
+      );
+    }
+    if (obs.client_dedupe_key !== undefined && obs.client_dedupe_key !== null && typeof obs.client_dedupe_key !== 'string') {
+      return NextResponse.json<ApiError>(
+        { error: `Observation ${i}: client_dedupe_key must be string or null` },
+        { status: 400 },
+      );
+    }
   }
 
   // Verify node belongs to user
@@ -96,11 +156,15 @@ export async function POST(request: NextRequest) {
 
     let accepted = 0;
     for (const obs of observations) {
-      await client.query(
+      const insertResult = await client.query(
         `INSERT INTO observations
          (node_id, signal_type, observed_at, frequency_hz, timestamp_ns,
-          tdoa_offset_ns, signal_strength_dbm, snr_db, source_id, raw_data)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+          tdoa_offset_ns, signal_strength_dbm, snr_db, source_id, raw_data,
+          latitude, longitude, accuracy_m, altitude_m, app_version, build_number,
+          device_model, android_api_level, validation_status, client_dedupe_key)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
+         ON CONFLICT (node_id, client_dedupe_key) WHERE client_dedupe_key IS NOT NULL DO NOTHING
+         RETURNING id`,
         [
           node_id,
           obs.signal_type,
@@ -112,9 +176,21 @@ export async function POST(request: NextRequest) {
           obs.snr_db ?? null,
           obs.source_id ?? null,
           obs.raw_data ? JSON.stringify(obs.raw_data) : null,
+          obs.latitude ?? null,
+          obs.longitude ?? null,
+          obs.accuracy ?? null,
+          obs.altitude ?? null,
+          obs.app_version ?? null,
+          obs.build_number ?? null,
+          obs.device_model ?? null,
+          obs.android_api_level ?? null,
+          obs.validation_status ?? 'raw',
+          obs.client_dedupe_key ?? null,
         ],
       );
-      accepted++;
+      if (insertResult.rows.length > 0) {
+        accepted++;
+      }
     }
 
     await client.query('COMMIT');
