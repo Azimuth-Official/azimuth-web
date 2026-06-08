@@ -48,6 +48,7 @@ export default function Navbar() {
           <Link href="/dashboard" className="text-slate-400 hover:text-slate-100 transition-colors">Dashboard</Link>
           <Link href="/explorer" className="text-slate-400 hover:text-slate-100 transition-colors">Explorer</Link>
           <Link href="/guides" className="text-slate-400 hover:text-slate-100 transition-colors">Setup Guide</Link>
+          <Link href="/download" className="text-amber-500 hover:text-amber-400 font-medium transition-colors">Download</Link>
         </div>
 
         {/* Auth State / CTA (Desktop) */}
@@ -102,6 +103,7 @@ export default function Navbar() {
             <Link href="/dashboard" className="text-slate-400 hover:text-slate-100 transition-colors" onClick={() => setIsOpen(false)}>Dashboard</Link>
             <Link href="/explorer" className="text-slate-400 hover:text-slate-100 transition-colors" onClick={() => setIsOpen(false)}>Explorer</Link>
             <Link href="/guides" className="text-slate-400 hover:text-slate-100 transition-colors" onClick={() => setIsOpen(false)}>Setup Guide</Link>
+            <Link href="/download" className="text-amber-500 hover:text-amber-400 font-medium transition-colors" onClick={() => setIsOpen(false)}>Download</Link>
 
             {user ? (
               <>

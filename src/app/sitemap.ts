@@ -19,5 +19,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${baseUrl}/guides/tier0-setup`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
     { url: `${baseUrl}/guides/quickstart`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
     { url: `${baseUrl}/guides/tier2-setup`, lastModified: now, changeFrequency: "monthly", priority: 0.5 },
+    { url: `${baseUrl}/download`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
   ];
 }
