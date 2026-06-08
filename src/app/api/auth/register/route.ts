@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { generateApiKey, hashApiKey } from '@/lib/crypto';
+import bcrypt from 'bcryptjs';
 import type { RegisterRequest, RegisterResponse, ApiError } from '@/lib/types';
 
 export async function POST(request: NextRequest) {
-  let body: RegisterRequest;
+  let body: RegisterRequest & { password?: string };
   try {
     body = await request.json();
   } catch {
@@ -14,7 +15,22 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { email, wallet_address } = body;
+  const { email, wallet_address, password } = body;
+
+  // Require password for authentication
+  if (!password || typeof password !== 'string') {
+    return NextResponse.json<ApiError>(
+      { error: 'password required (minimum 8 characters)' },
+      { status: 400 },
+    );
+  }
+
+  if (password.length < 8) {
+    return NextResponse.json<ApiError>(
+      { error: 'password must be at least 8 characters' },
+      { status: 400 },
+    );
+  }
 
   // Require at least one identifier
   if (!email && !wallet_address) {
@@ -45,25 +61,28 @@ export async function POST(request: NextRequest) {
     await client.query('BEGIN');
 
     let userId: string;
+    
+    // Hash password
+    const passwordHash = await bcrypt.hash(password, 12);
 
     if (email) {
-      // Upsert by email
+      // Upsert by email, update password_hash
       const userResult = await client.query(
-        `INSERT INTO users (email)
-         VALUES ($1)
-         ON CONFLICT (email) DO UPDATE SET updated_at = now()
+        `INSERT INTO users (email, password_hash)
+         VALUES ($1, $2)
+         ON CONFLICT (email) DO UPDATE SET password_hash = $2, updated_at = now()
          RETURNING id`,
-        [email],
+        [email, passwordHash],
       );
       userId = userResult.rows[0].id;
     } else {
-      // Legacy: upsert by wallet_address
+      // Legacy: upsert by wallet_address, set password_hash
       const userResult = await client.query(
-        `INSERT INTO users (wallet_address)
-         VALUES ($1)
-         ON CONFLICT (wallet_address) DO UPDATE SET updated_at = now()
+        `INSERT INTO users (wallet_address, password_hash)
+         VALUES ($1, $2)
+         ON CONFLICT (wallet_address) DO UPDATE SET password_hash = $2, updated_at = now()
          RETURNING id`,
-        [wallet_address],
+        [wallet_address, passwordHash],
       );
       userId = userResult.rows[0].id;
     }
