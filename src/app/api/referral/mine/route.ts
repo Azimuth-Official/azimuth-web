@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
       `SELECT u.id as referee_id, u.created_at,
               CASE WHEN p.id IS NOT NULL THEN true ELSE false END as bonus_awarded
        FROM users u
-       LEFT JOIN points p ON p.user_id = $1 AND p.reason = 'referral_bonus' AND p.reference_id = u.id
+       LEFT JOIN points p ON p.user_id = $1 AND p.reason = 'referral_bonus' AND p.reference_id = u.id::text
        WHERE u.referred_by = $1
        ORDER BY u.created_at DESC`,
       [auth.user_id],

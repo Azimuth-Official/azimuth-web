@@ -175,7 +175,7 @@ export async function POST(request: NextRequest) {
           obs.signal_strength_dbm ?? null,
           obs.snr_db ?? null,
           obs.source_id ?? null,
-          obs.raw_data ? JSON.stringify(obs.raw_data) : null,
+          JSON.stringify(obs.raw_data || {}),
           obs.latitude ?? null,
           obs.longitude ?? null,
           obs.accuracy ?? null,

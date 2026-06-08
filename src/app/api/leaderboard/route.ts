@@ -23,26 +23,21 @@ export async function GET(request: NextRequest) {
     }
     // alltime: no filter
 
-    // Query leaderboard with period filter
+    // Query leaderboard with subqueries to avoid cartesian product
     const query = `
       SELECT u.id,
-             COALESCE(SUM(p.amount), 0)::integer as points,
-             COUNT(DISTINCT o.id)::integer as observation_count,
-             ROW_NUMBER() OVER (ORDER BY COALESCE(SUM(p.amount), 0) DESC) as rank
+             (SELECT COALESCE(SUM(p.amount), 0) FROM points p WHERE p.user_id = u.id ${periodFilter.replace('p.created_at', 'p.created_at')})::integer as points,
+             (SELECT COUNT(*) FROM observations o JOIN nodes n ON o.node_id = n.id WHERE n.user_id = u.id)::integer as observation_count
       FROM users u
-      LEFT JOIN points p ON p.user_id = u.id ${periodFilter}
-      LEFT JOIN nodes n ON n.user_id = u.id
-      LEFT JOIN observations o ON o.node_id = n.id
-      GROUP BY u.id
-      HAVING COALESCE(SUM(p.amount), 0) > 0
+      WHERE (SELECT COALESCE(SUM(p.amount), 0) FROM points p WHERE p.user_id = u.id ${periodFilter.replace('p.created_at', 'p.created_at')}) > 0
       ORDER BY points DESC
       LIMIT $1
     `;
 
     const result = await pool.query(query, [limit]);
 
-    const entries: LeaderboardEntry[] = result.rows.map((row) => ({
-      rank: row.rank,
+    const entries: LeaderboardEntry[] = result.rows.map((row, index) => ({
+      rank: index + 1,
       animal_name: generateAnimalName(row.id),
       points: row.points,
       observation_count: row.observation_count,
