@@ -193,10 +193,20 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Award points for accepted observations
+    if (accepted > 0) {
+      const { POINTS } = await import('@/lib/points');
+      await client.query(
+        `INSERT INTO points (user_id, amount, reason, reference_id)
+         VALUES ($1, $2, $3, $4)`,
+        [auth.user_id, accepted * POINTS.PER_OBSERVATION, 'observation_upload', `batch_${Date.now()}`],
+      );
+    }
+
     await client.query('COMMIT');
 
     return NextResponse.json<SubmitObservationsResponse>(
-      { accepted },
+      { accepted, points_earned: accepted * 1 },
       { status: 201 },
     );
   } catch (err) {

@@ -2,10 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { generateApiKey, hashApiKey } from '@/lib/crypto';
 import bcrypt from 'bcryptjs';
+import { generateReferralCode, processReferral } from '@/lib/referral';
 import type { RegisterRequest, RegisterResponse, ApiError } from '@/lib/types';
 
 export async function POST(request: NextRequest) {
-  let body: RegisterRequest & { password?: string };
+  let body: RegisterRequest & { password?: string; referral_code?: string };
   try {
     body = await request.json();
   } catch {
@@ -15,7 +16,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { email, wallet_address, password } = body;
+  const { email, wallet_address, password, referral_code } = body;
 
   // Require password for authentication
   if (!password || typeof password !== 'string') {
@@ -61,28 +62,31 @@ export async function POST(request: NextRequest) {
     await client.query('BEGIN');
 
     let userId: string;
-    
+
     // Hash password
     const passwordHash = await bcrypt.hash(password, 12);
+
+    // Generate referral code for new user
+    const newReferralCode = generateReferralCode();
 
     if (email) {
       // Upsert by email, update password_hash
       const userResult = await client.query(
-        `INSERT INTO users (email, password_hash)
-         VALUES ($1, $2)
+        `INSERT INTO users (email, password_hash, referral_code)
+         VALUES ($1, $2, $3)
          ON CONFLICT (email) DO UPDATE SET password_hash = $2, updated_at = now()
          RETURNING id`,
-        [email, passwordHash],
+        [email, passwordHash, newReferralCode],
       );
       userId = userResult.rows[0].id;
     } else {
       // Legacy: upsert by wallet_address, set password_hash
       const userResult = await client.query(
-        `INSERT INTO users (wallet_address, password_hash)
-         VALUES ($1, $2)
+        `INSERT INTO users (wallet_address, password_hash, referral_code)
+         VALUES ($1, $2, $3)
          ON CONFLICT (wallet_address) DO UPDATE SET password_hash = $2, updated_at = now()
          RETURNING id`,
-        [wallet_address, passwordHash],
+        [wallet_address, passwordHash, newReferralCode],
       );
       userId = userResult.rows[0].id;
     }
@@ -96,6 +100,11 @@ export async function POST(request: NextRequest) {
        VALUES ($1, $2, $3)`,
       [userId, keyHash, 'default'],
     );
+
+    // Process referral if code provided
+    if (referral_code) {
+      await processReferral(client as any, referral_code, userId);
+    }
 
     await client.query('COMMIT');
 

@@ -1,27 +1,45 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
-import type {
-  NetworkStats,
-  NodeInfo,
-  ListRewardsResponse,
-} from "@/lib/types";
+import type { NetworkStats, NodeInfo, ListRewardsResponse, PointsResponse, ReferralResponse } from "@/lib/types";
+
+interface UserInfo {
+  id: string;
+  email: string | null;
+  wallet_address: string | null;
+  display_name: string | null;
+  created_at: string;
+}
 
 export default function Dashboard() {
-  const [apiKey, setApiKey] = useState<string | null>(null);
-  const [keyInput, setKeyInput] = useState("");
+  const router = useRouter();
+  const [user, setUser] = useState<UserInfo | null>(null);
   const [stats, setStats] = useState<NetworkStats | null>(null);
   const [nodes, setNodes] = useState<NodeInfo[]>([]);
   const [rewards, setRewards] = useState<ListRewardsResponse | null>(null);
+  const [points, setPoints] = useState<PointsResponse | null>(null);
+  const [referral, setReferral] = useState<ReferralResponse | null>(null);
 
-  // Load API key from localStorage on mount
+  // Fetch current user (cookie-based — auto-sent)
   useEffect(() => {
-    const stored = localStorage.getItem("azimuth_api_key");
-    if (stored) setApiKey(stored);
-  }, []);
+    fetch("/api/auth/web/me")
+      .then((r) => {
+        if (r.status === 401) {
+          router.push("/login");
+          return null;
+        }
+        if (!r.ok) return null; // rate limit or transient error — don't redirect
+        return r.json();
+      })
+      .then((data) => {
+        if (data?.user) setUser(data.user);
+      })
+      .catch(() => {}); // network error — don't redirect, show loading
+  }, [router]);
 
-  // Fetch public stats (no auth)
+  // Fetch public stats
   useEffect(() => {
     fetch("/api/stats")
       .then((r) => r.json())
@@ -29,13 +47,14 @@ export default function Dashboard() {
       .catch(() => {});
   }, []);
 
-  // Fetch authenticated data when API key available
-  const fetchUserData = useCallback(async (key: string) => {
-    const headers = { Authorization: `Bearer ${key}` };
+  // Fetch authenticated data (cookie auto-sent on same-origin)
+  const fetchUserData = useCallback(async () => {
     try {
-      const [nodesRes, rewardsRes] = await Promise.all([
-        fetch("/api/nodes/mine", { headers }),
-        fetch("/api/rewards/mine", { headers }),
+      const [nodesRes, rewardsRes, pointsRes, referralRes] = await Promise.all([
+        fetch("/api/nodes/mine"),
+        fetch("/api/rewards/mine"),
+        fetch("/api/points/mine"),
+        fetch("/api/referral/mine"),
       ]);
       if (nodesRes.ok) {
         const data = await nodesRes.json();
@@ -45,73 +64,60 @@ export default function Dashboard() {
         const data = await rewardsRes.json();
         setRewards(data);
       }
+      if (pointsRes.ok) {
+        const data = await pointsRes.json();
+        setPoints(data);
+      }
+      if (referralRes.ok) {
+        const data = await referralRes.json();
+        setReferral(data);
+      }
     } catch {
       // silent — dashboard degrades gracefully
     }
   }, []);
 
   useEffect(() => {
-    if (apiKey) fetchUserData(apiKey);
-  }, [apiKey, fetchUserData]);
+    if (user) fetchUserData();
+  }, [user, fetchUserData]);
 
-  const handleConnect = () => {
-    const trimmed = keyInput.trim();
-    if (trimmed.length === 128 || trimmed.length === 64) {
-      localStorage.setItem("azimuth_api_key", trimmed);
-      setApiKey(trimmed);
-      setKeyInput("");
-    }
-  };
-
-  const handleDisconnect = () => {
-    localStorage.removeItem("azimuth_api_key");
-    setApiKey(null);
-    setNodes([]);
-    setRewards(null);
+  const handleLogout = async () => {
+    await fetch("/api/auth/web/logout", { method: "POST" });
+    router.push("/login");
   };
 
   const primaryNode = nodes[0] ?? null;
   const isActive = primaryNode?.status === "active";
 
-  if (!apiKey) {
+  if (!user) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="bg-surface border border-border rounded-xl p-8 max-w-sm text-center">
-          <h1 className="text-2xl font-bold text-slate-100 mb-3">
-            Connect to Dashboard
-          </h1>
-          <p className="text-slate-400 mb-6">
-            Enter your API key to view your node status and rewards.
-          </p>
-          <input
-            type="password"
-            value={keyInput}
-            onChange={(e) => setKeyInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleConnect()}
-            placeholder="API key (64-char hex)"
-            className="w-full bg-surface-alt border border-border rounded-lg px-4 py-2 text-slate-100 placeholder-slate-500 mb-4 font-mono text-sm"
-          />
-          <button
-            onClick={handleConnect}
-            disabled={keyInput.trim().length < 64}
-            className="bg-amber-500 hover:bg-amber-600 disabled:bg-slate-700 disabled:text-slate-500 text-navy font-semibold py-2 px-6 rounded-lg transition-colors w-full"
-          >
-            Connect
-          </button>
-        </div>
+        <div className="text-slate-400">Loading...</div>
       </div>
     );
   }
 
   return (
     <div className="space-y-8">
+      {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-slate-100">Dashboard</h1>
+        <div>
+          <h1 className="text-3xl font-bold text-slate-100">Dashboard</h1>
+          <p className="text-sm text-slate-400 mt-1">
+            {user.email || user.wallet_address || "Observer"}
+            {user.created_at && (
+              <span className="text-slate-600 ml-2">
+                &middot; member since{" "}
+                {new Date(user.created_at).toLocaleDateString()}
+              </span>
+            )}
+          </p>
+        </div>
         <button
-          onClick={handleDisconnect}
+          onClick={handleLogout}
           className="text-slate-400 hover:text-slate-100 text-sm px-4 py-2 rounded-lg border border-border hover:border-amber-500/50 transition-all"
         >
-          Disconnect
+          Sign out
         </button>
       </div>
 
@@ -174,6 +180,23 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* Points Balance Card */}
+      {points && (
+        <div className="bg-surface border border-border rounded-xl p-6">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-sm text-slate-500 uppercase tracking-wide">
+                Points Balance
+              </p>
+              <p className="text-3xl font-bold text-amber-500 mt-2">
+                {points.balance.toLocaleString()}
+              </p>
+            </div>
+            <span className="text-2xl text-amber-500">⭐</span>
+          </div>
+        </div>
+      )}
+
       {/* My Node Card */}
       <div className="bg-surface border border-border rounded-xl p-8">
         <div className="flex items-center gap-2 mb-6">
@@ -183,7 +206,7 @@ export default function Dashboard() {
             }`}
           ></div>
           <h2 className="text-xl font-semibold text-slate-100">
-            {primaryNode ? primaryNode.label ?? "My Node" : "My Node"}
+            {primaryNode ? (primaryNode.animal_name ?? primaryNode.label ?? "My Node") : "My Node"}
           </h2>
           <span
             className={`text-sm ${
@@ -250,6 +273,78 @@ export default function Dashboard() {
           </p>
         </div>
       </div>
+
+      {/* Referral Section */}
+      {referral && (
+        <div className="bg-surface border border-border rounded-xl p-8">
+          <h2 className="text-xl font-semibold text-slate-100 mb-6">
+            Referral Program
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            <div className="bg-surface-alt rounded-lg p-4">
+              <p className="text-sm text-slate-500 mb-2">Your Referral Code</p>
+              <div className="flex items-center gap-2">
+                <code className="text-slate-100 font-mono font-semibold">
+                  {referral.referral_code || "—"}
+                </code>
+                {referral.referral_code && (
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(referral.referral_code);
+                    }}
+                    className="text-xs text-slate-400 hover:text-slate-100 transition-colors"
+                  >
+                    Copy
+                  </button>
+                )}
+              </div>
+            </div>
+            <div className="bg-surface-alt rounded-lg p-4">
+              <p className="text-sm text-slate-500 mb-2">Referrals</p>
+              <p className="text-2xl font-bold text-slate-100">
+                {referral.referral_count}
+              </p>
+            </div>
+            <div className="bg-surface-alt rounded-lg p-4">
+              <p className="text-sm text-slate-500 mb-2">Bonus Points</p>
+              <p className="text-2xl font-bold text-amber-500">
+                +{referral.total_bonus_points}
+              </p>
+            </div>
+          </div>
+          {referral.referrals.length > 0 && (
+            <div>
+              <p className="text-sm text-slate-500 mb-3">Recent Referrals</p>
+              <div className="space-y-2">
+                {referral.referrals.slice(0, 5).map((ref) => (
+                  <div
+                    key={ref.referee_id}
+                    className="flex items-center justify-between text-sm py-2 border-b border-border last:border-0"
+                  >
+                    <div>
+                      <code className="text-slate-400 font-mono text-xs">
+                        {ref.referee_id.substring(0, 8)}...
+                      </code>
+                      <p className="text-slate-500 text-xs mt-1">
+                        {new Date(ref.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <span
+                      className={`text-xs font-semibold ${
+                        ref.bonus_awarded
+                          ? "text-green-500"
+                          : "text-slate-500"
+                      }`}
+                    >
+                      {ref.bonus_awarded ? "✓ Awarded" : "Pending"}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Recent Activity */}
       <div className="bg-surface border border-border rounded-xl p-8">

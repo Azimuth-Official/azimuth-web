@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { authenticateRequest } from '@/lib/auth';
+import { generateAnimalName } from '@/lib/animal-names';
 import type { ListNodesResponse, ApiError } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
@@ -20,7 +21,13 @@ export async function GET(request: NextRequest) {
       [auth.user_id],
     );
 
-    return NextResponse.json<ListNodesResponse>({ nodes: result.rows });
+    // Add animal_name to each node
+    const nodes = result.rows.map((node) => ({
+      ...node,
+      animal_name: generateAnimalName(node.id),
+    }));
+
+    return NextResponse.json<ListNodesResponse>({ nodes });
   } catch (err) {
     console.error('List nodes error:', err);
     return NextResponse.json<ApiError>(

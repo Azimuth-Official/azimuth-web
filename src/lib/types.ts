@@ -90,6 +90,7 @@ export interface NodeInfo {
   id: string;
   hardware_type: HardwareType;
   label: string | null;
+  animal_name: string | null;
   latitude: number | null;
   longitude: number | null;
   altitude_m: number | null;
@@ -156,6 +157,7 @@ export interface ListObservationsResponse {
 
 export interface SubmitObservationsResponse {
   accepted: number;
+  points_earned: number;
 }
 
 // ─── Rewards ─────────────────────────────────────────────────────────
@@ -196,9 +198,57 @@ export interface ApiError {
   details?: string;
 }
 
-// Auth context extracted by middleware
+// Auth context extracted from Bearer token or session cookie
 export interface AuthContext {
   user_id: string;
-  key_id: string;
+  key_id: string | null; // null for session/cookie auth
   permissions: Record<string, boolean>;
+}
+
+// ─── Points ──────────────────────────────────────────────────────────
+
+// GET /api/points/mine
+export interface PointEntry {
+  id: string;
+  amount: number;
+  reason: 'observation_upload' | 'referral_bonus' | 'referee_welcome' | 'streak_bonus' | 'manual_adjustment';
+  reference_id: string | null;
+  created_at: string; // ISO 8601
+}
+
+export interface PointsResponse {
+  balance: number;
+  history: PointEntry[];
+}
+
+// ─── Referral ────────────────────────────────────────────────────────
+
+// GET /api/referral/mine
+export interface ReferralEntry {
+  referee_id: string;
+  created_at: string; // ISO 8601
+  bonus_awarded: boolean;
+}
+
+export interface ReferralResponse {
+  referral_code: string;
+  referral_count: number;
+  total_bonus_points: number;
+  referrals: ReferralEntry[];
+}
+
+// ─── Leaderboard ─────────────────────────────────────────────────────
+
+// GET /api/leaderboard
+export interface LeaderboardEntry {
+  rank: number;
+  animal_name: string;
+  points: number;
+  observation_count: number;
+}
+
+export interface LeaderboardResponse {
+  period: string;
+  entries: LeaderboardEntry[];
+  total_participants: number;
 }

@@ -1,17 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { jwtVerify } from 'jose';
 import { rateLimit, RATE_LIMIT_CONFIG, startAutoPrune } from '@/lib/rate-limit';
 
 // Initialize automatic pruning on module load
 startAutoPrune();
 
+const COOKIE_NAME = 'azimuth_session';
+
+function getJwtSecret(): Uint8Array | null {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) return null;
+  return new TextEncoder().encode(secret);
+}
+
 /**
  * Extract client IP from request headers.
- * Prioritize x-forwarded-for (behind CDN), then x-real-ip, then connection address.
  */
 function getClientIp(request: NextRequest): string {
   const forwardedFor = request.headers.get('x-forwarded-for');
   if (forwardedFor) {
-    // x-forwarded-for can be comma-separated; take the first (original client)
     return forwardedFor.split(',')[0].trim();
   }
 
@@ -20,7 +27,6 @@ function getClientIp(request: NextRequest): string {
     return realIp;
   }
 
-  // Fallback
   return 'unknown';
 }
 
@@ -30,7 +36,12 @@ function getClientIp(request: NextRequest): string {
 function getBucketAndConfig(
   pathname: string,
 ): { bucket: string; config: typeof RATE_LIMIT_CONFIG[keyof typeof RATE_LIMIT_CONFIG] } {
-  // /api/auth/* → AUTH (register, rotate-key)
+  // /api/auth/web/me → READ (frequent check from Navbar/dashboard, not a write op)
+  if (pathname === '/api/auth/web/me') {
+    return { bucket: 'READ', config: RATE_LIMIT_CONFIG.READ };
+  }
+
+  // /api/auth/* → AUTH (register, rotate-key, login, etc.)
   if (pathname.startsWith('/api/auth/')) {
     return { bucket: 'AUTH', config: RATE_LIMIT_CONFIG.AUTH };
   }
@@ -51,11 +62,13 @@ function getBucketAndConfig(
   }
 
   // Read-only endpoints
-  // /api/stats, /api/rewards/mine, /api/nodes/mine, /api/mcp, GET /api/nodes/[nodeId]
   if (
     pathname === '/api/stats' ||
     pathname === '/api/rewards/mine' ||
     pathname === '/api/nodes/mine' ||
+    pathname === '/api/points/mine' ||
+    pathname === '/api/referral/mine' ||
+    pathname === '/api/leaderboard' ||
     pathname === '/api/mcp' ||
     pathname.match(/^\/api\/nodes\/[^/]+$/)
   ) {
@@ -67,17 +80,69 @@ function getBucketAndConfig(
 }
 
 export async function middleware(request: NextRequest) {
-  // Only apply rate limiting to /api/* routes
-  if (!request.nextUrl.pathname.startsWith('/api/')) {
+  const { pathname } = request.nextUrl;
+
+  // ─── Auth gating for /dashboard/* ───
+  if (pathname.startsWith('/dashboard')) {
+    const secret = getJwtSecret();
+    if (!secret) {
+      // JWT not configured — let through (degraded mode)
+      return NextResponse.next();
+    }
+
+    const token = request.cookies.get(COOKIE_NAME)?.value;
+    if (!token) {
+      const res = NextResponse.redirect(new URL('/login', request.url));
+      res.headers.set('Cache-Control', 'private, no-store');
+      return res;
+    }
+
+    try {
+      await jwtVerify(token, secret);
+    } catch {
+      // Invalid or expired token — clear cookie and redirect
+      const res = NextResponse.redirect(new URL('/login', request.url));
+      res.cookies.set(COOKIE_NAME, '', { maxAge: 0, path: '/' });
+      res.headers.set('Cache-Control', 'private, no-store');
+      return res;
+    }
+
+    const res = NextResponse.next();
+    res.headers.set('Cache-Control', 'private, no-store');
+    return res;
+  }
+
+  // ─── Redirect logged-in users away from /login ───
+  if (pathname === '/login') {
+    const secret = getJwtSecret();
+    if (secret) {
+      const token = request.cookies.get(COOKIE_NAME)?.value;
+      if (token) {
+        try {
+          await jwtVerify(token, secret);
+          const res = NextResponse.redirect(new URL('/dashboard', request.url));
+          res.headers.set('Cache-Control', 'private, no-store');
+          return res;
+        } catch {
+          // Invalid token — let them see login page
+        }
+      }
+    }
+    const res = NextResponse.next();
+    res.headers.set('Cache-Control', 'private, no-store');
+    return res;
+  }
+
+  // ─── Rate limiting for /api/* ───
+  if (!pathname.startsWith('/api/')) {
     return NextResponse.next();
   }
 
   const clientIp = getClientIp(request);
-  const { bucket, config } = getBucketAndConfig(request.nextUrl.pathname);
+  const { bucket, config } = getBucketAndConfig(pathname);
 
   const result = rateLimit(clientIp, bucket, config);
 
-  // If rate limit exceeded, return 429 with retry information
   if (!result.allowed) {
     const retryAfterSeconds = Math.ceil(result.resetMs / 1000);
     return NextResponse.json(
@@ -96,7 +161,6 @@ export async function middleware(request: NextRequest) {
     );
   }
 
-  // Request allowed; proceed with response and add rate limit headers
   const response = NextResponse.next();
 
   response.headers.set('X-RateLimit-Remaining', result.remaining.toString());
@@ -108,7 +172,6 @@ export async function middleware(request: NextRequest) {
   return response;
 }
 
-// Configure matcher for /api/* routes
 export const config = {
-  matcher: '/api/:path*',
+  matcher: ['/api/:path*', '/dashboard/:path*', '/login'],
 };

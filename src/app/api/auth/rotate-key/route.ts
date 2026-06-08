@@ -8,6 +8,13 @@ export async function POST(request: NextRequest) {
   const auth = await authenticateRequest(request);
   if (auth instanceof NextResponse) return auth;
 
+  if (!auth.key_id) {
+    return NextResponse.json<ApiError>(
+      { error: 'API key authentication required for key rotation' },
+      { status: 403 },
+    );
+  }
+
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
