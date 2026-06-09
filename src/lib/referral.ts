@@ -55,5 +55,18 @@ export async function processReferral(
     [newUserId, POINTS.REFEREE_WELCOME, 'referee_welcome', referrerId],
   );
 
+  // Set referred_by on new user
+  await pool.query(
+    'UPDATE users SET referred_by = $1 WHERE id = $2',
+    [referrerId, newUserId],
+  );
+
+  // Record in referrals table
+  await pool.query(
+    `INSERT INTO referrals (referrer_id, referee_id, bonus_awarded)
+     VALUES ($1, $2, true)`,
+    [referrerId, newUserId],
+  );
+
   return true;
 }
