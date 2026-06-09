@@ -1,10 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { cellToBoundary } from 'h3-js';
 import pool from '@/lib/db';
 import { authenticateRequest } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
-// GET /api/coverage — global anonymized coverage
+function computeBoundary(h3Index: string): number[][] | null {
+  if (!h3Index || h3Index.startsWith('grid')) return null;
+  try {
+    return cellToBoundary(h3Index); // returns [[lat, lng], ...]
+  } catch {
+    return null;
+  }
+}
+
+// GET /api/coverage — global anonymized coverage with precomputed hex boundaries
 export async function GET(request: NextRequest) {
   const auth = await authenticateRequest(request);
   if (auth instanceof NextResponse) return auth;
@@ -23,6 +33,7 @@ export async function GET(request: NextRequest) {
         h3_index: r.h3_index,
         contributor_count: parseInt(r.contributor_count),
         total_observations: parseInt(r.total_observations),
+        boundary: computeBoundary(r.h3_index),
       })),
     });
   } catch (err) {
@@ -83,7 +94,16 @@ export async function POST(request: NextRequest) {
     }
 
     await client.query('COMMIT');
-    return NextResponse.json({ synced }, { status: 201 });
+
+    // Return boundaries for all uploaded hexes so Android can render them
+    const boundaries: Record<string, number[][] | null> = {};
+    for (const hex of body.hexes) {
+      if (hex.h3_index) {
+        boundaries[hex.h3_index] = computeBoundary(hex.h3_index);
+      }
+    }
+
+    return NextResponse.json({ synced, boundaries }, { status: 201 });
   } catch (err) {
     await client.query('ROLLBACK');
     console.error('Coverage upsert error:', err);
