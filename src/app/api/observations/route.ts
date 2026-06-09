@@ -154,8 +154,14 @@ export async function POST(request: NextRequest) {
   try {
     await client.query('BEGIN');
 
+    const GPS_ACCURACY_THRESHOLD_M = 50;
     let accepted = 0;
     for (const obs of observations) {
+      // Skip observations with poor GPS accuracy
+      if (obs.accuracy !== undefined && obs.accuracy !== null && obs.accuracy > GPS_ACCURACY_THRESHOLD_M) {
+        continue;
+      }
+
       const insertResult = await client.query(
         `INSERT INTO observations
          (node_id, signal_type, observed_at, frequency_hz, timestamp_ns,
