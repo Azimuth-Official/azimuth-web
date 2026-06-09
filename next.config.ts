@@ -14,6 +14,13 @@ const nextConfig: NextConfig = {
           { key: 'CDN-Cache-Control', value: 'no-store' },
         ],
       },
+      {
+        source: '/downloads/:path*',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=3600' },
+          { key: 'CDN-Cache-Control', value: 'max-age=3600' },
+        ],
+      },
     ];
   },
 };

@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import fs from "fs";
+import path from "path";
 
 export const metadata: Metadata = {
   title: "Download Azimuth Observer",
@@ -7,7 +9,28 @@ export const metadata: Metadata = {
     "Download the Azimuth Observer app to participate in the decentralized positioning network.",
 };
 
+function getVersionInfo() {
+  try {
+    const versionPath = path.join(process.cwd(), "public", "version.json");
+    return JSON.parse(fs.readFileSync(versionPath, "utf-8"));
+  } catch {
+    return { version_name: "0.1.0", release_notes: null };
+  }
+}
+
+function getApkSize() {
+  try {
+    const apkPath = path.join(process.cwd(), "public", "downloads", "azimuth-observer.apk");
+    const stats = fs.statSync(apkPath);
+    return `~${Math.round(stats.size / 1024 / 1024)} MB`;
+  } catch {
+    return "~34 MB";
+  }
+}
+
 export default function DownloadPage() {
+  const version = getVersionInfo();
+  const apkSize = getApkSize();
   return (
     <section className="min-h-[80vh] flex flex-col items-center justify-center px-6 py-20">
       <div className="max-w-2xl w-full text-center space-y-8">
@@ -59,11 +82,11 @@ export default function DownloadPage() {
           <div className="grid grid-cols-2 gap-4 text-sm text-slate-400">
             <div>
               <span className="text-slate-500">Version</span>
-              <p className="text-slate-300">v0.1.0-beta</p>
+              <p className="text-slate-300">v{version.version_name}</p>
             </div>
             <div>
               <span className="text-slate-500">Size</span>
-              <p className="text-slate-300">~23 MB</p>
+              <p className="text-slate-300">{apkSize}</p>
             </div>
             <div>
               <span className="text-slate-500">Requires</span>
