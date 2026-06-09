@@ -306,9 +306,9 @@ export default function Dashboard() {
               </p>
             </div>
             <div className="bg-surface-alt rounded-lg p-4">
-              <p className="text-sm text-slate-500 mb-2">Bonus Points</p>
+              <p className="text-sm text-slate-500 mb-2">Referral Earnings</p>
               <p className="text-2xl font-bold text-amber-500">
-                +{referral.total_bonus_points}
+                +{referral.total_earnings}
               </p>
             </div>
           </div>
@@ -326,17 +326,11 @@ export default function Dashboard() {
                         {ref.referee_id.substring(0, 8)}...
                       </code>
                       <p className="text-slate-500 text-xs mt-1">
-                        {new Date(ref.created_at).toLocaleDateString()}
+                        {new Date(ref.joined_at).toLocaleDateString()}
                       </p>
                     </div>
-                    <span
-                      className={`text-xs font-semibold ${
-                        ref.bonus_awarded
-                          ? "text-green-500"
-                          : "text-slate-500"
-                      }`}
-                    >
-                      {ref.bonus_awarded ? "✓ Awarded" : "Pending"}
+                    <span className="text-xs font-semibold text-amber-500">
+                      +{ref.earnings_from_referee} pts
                     </span>
                   </div>
                 ))}
