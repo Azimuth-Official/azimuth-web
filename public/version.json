@@ -1,0 +1,6 @@
+{
+    "version_code": 1,
+    "version_name": "0.1.0",
+    "download_url": "https://azimuth.day/downloads/azimuth-observer.apk",
+    "release_notes": "Initial release with signal observation, hex coverage mapping, points system, referral program, and leaderboard."
+}

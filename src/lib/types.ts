@@ -127,6 +127,7 @@ export interface ObservationPayload {
   android_api_level?: number;
   validation_status?: string;
   client_dedupe_key?: string;
+  rtk_enabled?: boolean | null;
 }
 
 export interface SubmitObservationsRequest {
@@ -211,7 +212,7 @@ export interface AuthContext {
 export interface PointEntry {
   id: string;
   amount: number;
-  reason: 'observation_upload' | 'referral_bonus' | 'referee_welcome' | 'streak_bonus' | 'manual_adjustment';
+  reason: 'observation_upload' | 'observation_rtk' | 'referral_bonus' | 'referee_welcome' | 'streak_bonus' | 'manual_adjustment';
   reference_id: string | null;
   created_at: string; // ISO 8601
 }
@@ -251,4 +252,24 @@ export interface LeaderboardResponse {
   period: string;
   entries: LeaderboardEntry[];
   total_participants: number;
+}
+
+// ─── RTK Providers ───────────────────────────────────────────────────
+
+export interface RtkProvider {
+  id: string;
+  user_id: string;
+  provider_name: 'geodnet' | 'onocoy' | 'other';
+  is_active: boolean;
+  created_at: string;
+}
+
+// POST /api/rtk-providers
+export interface RegisterRtkProviderRequest {
+  provider_name: 'geodnet' | 'onocoy' | 'other';
+}
+
+// GET /api/rtk-providers
+export interface ListRtkProvidersResponse {
+  providers: RtkProvider[];
 }

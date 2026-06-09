@@ -36,6 +36,11 @@ function getClientIp(request: NextRequest): string {
 function getBucketAndConfig(
   pathname: string,
 ): { bucket: string; config: typeof RATE_LIMIT_CONFIG[keyof typeof RATE_LIMIT_CONFIG] } {
+  // /api/version → READ (public, no auth)
+  if (pathname === '/api/version') {
+    return { bucket: 'READ', config: RATE_LIMIT_CONFIG.READ };
+  }
+
   // /api/auth/web/me → READ (frequent check from Navbar/dashboard, not a write op)
   if (pathname === '/api/auth/web/me') {
     return { bucket: 'READ', config: RATE_LIMIT_CONFIG.READ };
@@ -49,6 +54,11 @@ function getBucketAndConfig(
   // /api/observations → OBSERVATION (high frequency)
   if (pathname === '/api/observations') {
     return { bucket: 'OBSERVATION', config: RATE_LIMIT_CONFIG.OBSERVATION };
+  }
+
+  // /api/rtk-providers → WRITE bucket (covers both GET and POST, more restrictive)
+  if (pathname === '/api/rtk-providers') {
+    return { bucket: 'WRITE', config: RATE_LIMIT_CONFIG.WRITE };
   }
 
   // /api/nodes/*/heartbeat → OBSERVATION (high frequency from daemons)

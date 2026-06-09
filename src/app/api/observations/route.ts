@@ -136,6 +136,12 @@ export async function POST(request: NextRequest) {
         { status: 400 },
       );
     }
+    if (obs.rtk_enabled !== undefined && obs.rtk_enabled !== null && typeof obs.rtk_enabled !== 'boolean') {
+      return NextResponse.json<ApiError>(
+        { error: `Observation ${i}: rtk_enabled must be boolean or null` },
+        { status: 400 },
+      );
+    }
   }
 
   // Verify node belongs to user
@@ -167,8 +173,8 @@ export async function POST(request: NextRequest) {
          (node_id, signal_type, observed_at, frequency_hz, timestamp_ns,
           tdoa_offset_ns, signal_strength_dbm, snr_db, source_id, raw_data,
           latitude, longitude, accuracy_m, altitude_m, app_version, build_number,
-          device_model, android_api_level, validation_status, client_dedupe_key)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
+          device_model, android_api_level, validation_status, client_dedupe_key, rtk_enabled)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)
          ON CONFLICT (node_id, client_dedupe_key) WHERE client_dedupe_key IS NOT NULL DO NOTHING
          RETURNING id`,
         [
@@ -192,6 +198,7 @@ export async function POST(request: NextRequest) {
           obs.android_api_level ?? null,
           obs.validation_status ?? 'raw',
           obs.client_dedupe_key ?? null,
+          obs.rtk_enabled ?? false,
         ],
       );
       if (insertResult.rows.length > 0) {
@@ -207,6 +214,27 @@ export async function POST(request: NextRequest) {
          VALUES ($1, $2, $3, $4)`,
         [auth.user_id, accepted * POINTS.PER_OBSERVATION, 'observation_upload', `batch_${Date.now()}`],
       );
+
+      // Check for RTK-enabled observations and award bonus
+      const rtkCount = observations.filter(obs => obs.rtk_enabled === true).length;
+      if (rtkCount > 0) {
+        // Verify user has an active RTK provider (anti-spoofing)
+        const providerCheck = await client.query(
+          'SELECT id FROM rtk_providers WHERE user_id = $1 AND is_active = true LIMIT 1',
+          [auth.user_id],
+        );
+
+        if (providerCheck.rows.length > 0) {
+          // Award bonus for RTK observations (0.5x extra = 1.5x total)
+          // Regular 1pt already awarded above, add 0.5pt bonus per RTK observation
+          const rtkAccepted = Math.min(rtkCount, accepted);
+          const rtkBonus = rtkAccepted; // 1 bonus point per RTK obs (total becomes 2, approximating 1.5x rounded up)
+          await client.query(
+            'INSERT INTO points (user_id, amount, reason, reference_id) VALUES ($1, $2, $3, $4)',
+            [auth.user_id, rtkBonus, 'observation_rtk', `rtk_batch_${Date.now()}`],
+          );
+        }
+      }
     }
 
     await client.query('COMMIT');
