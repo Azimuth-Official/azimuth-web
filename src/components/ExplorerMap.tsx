@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback, useMemo } from "react";
 import Map, {
   Source,
   Layer,
@@ -8,7 +8,84 @@ import Map, {
   NavigationControl,
 } from "react-map-gl/maplibre";
 import type { MapRef, MapLayerMouseEvent } from "react-map-gl/maplibre";
+import { cellToParent, cellToBoundary } from "h3-js";
 import { TIER_COLORS, TIER_LABELS, SIGNAL_COLORS } from "@/lib/explorer-constants";
+
+function zoomToH3Resolution(zoom: number): number {
+  if (zoom >= 14) return 8;
+  if (zoom >= 12) return 7;
+  if (zoom >= 10) return 6;
+  if (zoom >= 8) return 5;
+  if (zoom >= 6) return 4;
+  return 3;
+}
+
+function aggregateHexes(
+  features: GeoJSON.Feature[],
+  targetRes: number
+): GeoJSON.FeatureCollection {
+  if (targetRes >= 8) {
+    return { type: "FeatureCollection", features };
+  }
+
+  const parentMap = new globalThis.Map<
+    string,
+    { count: number; signalTypes: Set<string>; contributors: number; strength: number; strengthN: number }
+  >();
+
+  for (const f of features) {
+    const props = f.properties as Record<string, unknown> | null;
+    if (!props) continue;
+    const h3Index = props.h3_index as string | undefined;
+    if (!h3Index || h3Index.startsWith("grid")) continue;
+
+    try {
+      const parent = cellToParent(h3Index, targetRes);
+      const existing = parentMap.get(parent);
+      const obsCount = (props.observation_count as number) || 0;
+      const signals = (props.signal_types as string[]) || [];
+      const contribs = (props.contributor_count as number) || 0;
+      const str = (props.avg_signal_strength as number) || 0;
+
+      if (existing) {
+        existing.count += obsCount;
+        signals.forEach((s) => existing.signalTypes.add(s));
+        existing.contributors += contribs;
+        if (str) { existing.strength += str; existing.strengthN++; }
+      } else {
+        parentMap.set(parent, {
+          count: obsCount,
+          signalTypes: new Set(signals),
+          contributors: contribs,
+          strength: str || 0,
+          strengthN: str ? 1 : 0,
+        });
+      }
+    } catch {
+      // Skip invalid H3 indices
+    }
+  }
+
+  const aggregated: GeoJSON.Feature[] = Array.from(parentMap.entries()).map(
+    ([parentH3, data]) => {
+      const boundary = cellToBoundary(parentH3, true); // [lng, lat]
+      const ring = [...boundary.map(([lng, lat]) => [lng, lat]), boundary[0]];
+      return {
+        type: "Feature" as const,
+        geometry: { type: "Polygon" as const, coordinates: [ring] },
+        properties: {
+          h3_index: parentH3,
+          observation_count: data.count,
+          signal_types: Array.from(data.signalTypes),
+          avg_signal_strength: data.strengthN > 0 ? Math.round(data.strength / data.strengthN) : null,
+          contributor_count: data.contributors,
+        },
+      };
+    }
+  );
+
+  return { type: "FeatureCollection", features: aggregated };
+}
 
 const MAP_STYLES = {
   primary: "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
@@ -65,6 +142,22 @@ export default function ExplorerMap({
     lat: number;
     properties: HexProperties;
   } | null>(null);
+  const [displayResolution, setDisplayResolution] = useState(3);
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(null);
+
+  const handleZoomEnd = useCallback(() => {
+    const zoom = mapRef.current?.getMap()?.getZoom() ?? 3;
+    const newRes = zoomToH3Resolution(zoom);
+    if (newRes !== displayResolution) {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(() => setDisplayResolution(newRes), 300);
+    }
+  }, [displayResolution]);
+
+  const displayCoverage = useMemo(() => {
+    if (!coverageGeoJSON) return null;
+    return aggregateHexes(coverageGeoJSON.features, displayResolution);
+  }, [coverageGeoJSON, displayResolution]);
 
   const handleMapClick = (e: MapLayerMouseEvent) => {
     const hexFeature = e.features?.find((f) => f.layer.id === "hex-fill");
@@ -111,6 +204,7 @@ export default function ExplorerMap({
       initialViewState={{ longitude: -92.5, latitude: 44.09, zoom: 3 }}
       interactiveLayerIds={interactiveLayerIds}
       onClick={handleMapClick}
+      onMoveEnd={handleZoomEnd}
       style={{ width: "100%", height: "100%" }}
     >
       <NavigationControl position="bottom-right" />
@@ -145,9 +239,9 @@ export default function ExplorerMap({
         </Source>
       )}
 
-      {/* Hex coverage — rendered first (below nodes) */}
-      {layers.coverage && coverageGeoJSON && (
-        <Source id="coverage" type="geojson" data={coverageGeoJSON}>
+      {/* Hex coverage — multi-resolution, rendered first (below nodes) */}
+      {layers.coverage && displayCoverage && (
+        <Source id="coverage" type="geojson" data={displayCoverage}>
           <Layer
             id="hex-fill"
             type="fill"
@@ -165,13 +259,7 @@ export default function ExplorerMap({
                 5000,
                 "rgba(6, 182, 212, 0.7)",
               ],
-              "fill-opacity": [
-                "interpolate",
-                ["linear"],
-                ["zoom"],
-                8, 0,
-                11, 0.7,
-              ],
+              "fill-opacity": 0.7,
             }}
           />
           <Layer
