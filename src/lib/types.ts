@@ -212,7 +212,7 @@ export interface AuthContext {
 export interface PointEntry {
   id: string;
   amount: number;
-  reason: 'observation_upload' | 'observation_rtk' | 'referral_bonus' | 'referee_welcome' | 'streak_bonus' | 'manual_adjustment';
+  reason: 'observation_upload' | 'observation_rtk' | 'referral_bonus' | 'referee_welcome' | 'streak_bonus' | 'manual_adjustment' | 'referral_earnings';
   reference_id: string | null;
   created_at: string; // ISO 8601
 }
@@ -227,14 +227,14 @@ export interface PointsResponse {
 // GET /api/referral/mine
 export interface ReferralEntry {
   referee_id: string;
-  created_at: string; // ISO 8601
-  bonus_awarded: boolean;
+  earnings_from_referee: number;
+  joined_at: string;
 }
 
 export interface ReferralResponse {
   referral_code: string;
   referral_count: number;
-  total_bonus_points: number;
+  total_earnings: number;
   referrals: ReferralEntry[];
 }
 

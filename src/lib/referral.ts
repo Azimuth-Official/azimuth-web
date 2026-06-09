@@ -41,20 +41,6 @@ export async function processReferral(
 
   const referrerId = referrerResult.rows[0].id;
 
-  // Award points to referrer
-  await pool.query(
-    `INSERT INTO points (user_id, amount, reason, reference_id)
-     VALUES ($1, $2, $3, $4)`,
-    [referrerId, POINTS.REFERRAL_BONUS, 'referral_bonus', newUserId],
-  );
-
-  // Award points to referee (welcome bonus)
-  await pool.query(
-    `INSERT INTO points (user_id, amount, reason, reference_id)
-     VALUES ($1, $2, $3, $4)`,
-    [newUserId, POINTS.REFEREE_WELCOME, 'referee_welcome', referrerId],
-  );
-
   // Set referred_by on new user
   await pool.query(
     'UPDATE users SET referred_by = $1 WHERE id = $2',

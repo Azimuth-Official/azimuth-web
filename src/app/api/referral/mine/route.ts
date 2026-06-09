@@ -23,49 +23,45 @@ export async function GET(request: NextRequest) {
 
     const referralCode = userResult.rows[0].referral_code ?? null;
 
-    // Get referral entries (users who registered with this code)
-    const referralsResult = await pool.query(
-      `SELECT u.id as referee_id, u.created_at
-       FROM users u
-       WHERE u.referred_by = $1
-       ORDER BY u.created_at DESC`,
-      [auth.user_id],
-    );
-
-    const referralCount = referralsResult.rows.length;
-
-    // Get referral entries with bonus_awarded status
+    // Get referral entries with per-referee earnings
     const referralEntriesResult = await pool.query(
-      `SELECT u.id as referee_id, u.created_at,
-              CASE WHEN p.id IS NOT NULL THEN true ELSE false END as bonus_awarded
+      `SELECT u.id as referee_id, u.created_at as joined_at,
+              COALESCE(p_earnings.total, 0)::integer as earnings_from_referee
        FROM users u
-       LEFT JOIN points p ON p.user_id = $1 AND p.reason = 'referral_bonus' AND p.reference_id = u.id::text
+       LEFT JOIN (
+         SELECT reference_id, SUM(amount) as total
+         FROM points
+         WHERE user_id = $1 AND reason = 'referral_earnings'
+         GROUP BY reference_id
+       ) p_earnings ON p_earnings.reference_id = u.id::text
        WHERE u.referred_by = $1
        ORDER BY u.created_at DESC`,
       [auth.user_id],
     );
+
+    const referralCount = referralEntriesResult.rows.length;
 
     const referrals: ReferralEntry[] = referralEntriesResult.rows.map((row) => ({
       referee_id: row.referee_id,
-      created_at: row.created_at,
-      bonus_awarded: row.bonus_awarded,
+      earnings_from_referee: row.earnings_from_referee,
+      joined_at: row.joined_at,
     }));
 
-    // Get total bonus points earned from referrals
-    const bonusResult = await pool.query(
+    // Get total earnings from referrals
+    const earningsResult = await pool.query(
       `SELECT COALESCE(SUM(amount), 0)::integer as total
        FROM points
-       WHERE user_id = $1 AND reason = 'referral_bonus'`,
+       WHERE user_id = $1 AND reason = 'referral_earnings'`,
       [auth.user_id],
     );
 
-    const totalBonusPoints = bonusResult.rows[0]?.total ?? 0;
+    const totalEarnings = earningsResult.rows[0]?.total ?? 0;
 
     return NextResponse.json<ReferralResponse>(
       {
         referral_code: referralCode,
         referral_count: referralCount,
-        total_bonus_points: totalBonusPoints,
+        total_earnings: totalEarnings,
         referrals,
       },
       { status: 200 },

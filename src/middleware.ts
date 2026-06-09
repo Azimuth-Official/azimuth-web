@@ -46,6 +46,11 @@ function getBucketAndConfig(
     return { bucket: 'READ', config: RATE_LIMIT_CONFIG.READ };
   }
 
+  // /api/users/me → READ (GET user profile)
+  if (pathname === '/api/users/me') {
+    return { bucket: 'READ', config: RATE_LIMIT_CONFIG.READ };
+  }
+
   // /api/auth/* → AUTH (register, rotate-key, login, etc.)
   if (pathname.startsWith('/api/auth/')) {
     return { bucket: 'AUTH', config: RATE_LIMIT_CONFIG.AUTH };
@@ -145,6 +150,11 @@ export async function middleware(request: NextRequest) {
 
   // ─── Rate limiting for /api/* ───
   if (!pathname.startsWith('/api/')) {
+    return NextResponse.next();
+  }
+
+  // Bypass rate limiting for cron routes (authenticated via header)
+  if (pathname.startsWith('/api/cron/')) {
     return NextResponse.next();
   }
 
