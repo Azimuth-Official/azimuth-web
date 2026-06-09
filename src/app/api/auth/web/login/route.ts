@@ -46,6 +46,7 @@ export async function POST(request: NextRequest) {
 
     const user = result.rows[0];
 
+    // TODO: Google Sign-In users have no password_hash — need "set password" flow or Google web login
     if (!user.password_hash) {
       return NextResponse.json<ApiError>(
         { error: 'Account requires password setup — please re-register' },

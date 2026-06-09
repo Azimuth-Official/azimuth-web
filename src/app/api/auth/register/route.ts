@@ -49,6 +49,9 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // Normalize email to lowercase (matches web login/register behavior)
+  const normalizedEmail = email ? email.toLowerCase().trim() : undefined;
+
   // Validate wallet_address if provided (legacy)
   if (wallet_address && wallet_address.length < 58) {
     return NextResponse.json<ApiError>(
@@ -69,14 +72,14 @@ export async function POST(request: NextRequest) {
     // Generate referral code for new user
     const newReferralCode = generateReferralCode();
 
-    if (email) {
+    if (normalizedEmail) {
       // Upsert by email, update password_hash
       const userResult = await client.query(
         `INSERT INTO users (email, password_hash, referral_code)
          VALUES ($1, $2, $3)
          ON CONFLICT (email) DO UPDATE SET password_hash = $2, updated_at = now()
          RETURNING id`,
-        [email, passwordHash, newReferralCode],
+        [normalizedEmail, passwordHash, newReferralCode],
       );
       userId = userResult.rows[0].id;
     } else {
