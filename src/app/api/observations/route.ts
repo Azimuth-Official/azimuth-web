@@ -228,7 +228,7 @@ export async function POST(request: NextRequest) {
           // Award bonus for RTK observations (0.5x extra = 1.5x total)
           // Regular 1pt already awarded above, add 0.5pt bonus per RTK observation
           const rtkAccepted = Math.min(rtkCount, accepted);
-          const rtkBonus = rtkAccepted; // 1 bonus point per RTK obs (total becomes 2, approximating 1.5x rounded up)
+          const rtkBonus = Math.floor(rtkAccepted * 0.5); // 0.5 bonus per RTK obs = 1.5x total
           await client.query(
             'INSERT INTO points (user_id, amount, reason, reference_id) VALUES ($1, $2, $3, $4)',
             [auth.user_id, rtkBonus, 'observation_rtk', `rtk_batch_${Date.now()}`],
