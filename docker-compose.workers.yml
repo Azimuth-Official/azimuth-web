@@ -1,0 +1,42 @@
+services:
+  worker-adsb:
+    build: { context: ., dockerfile: Dockerfile.workers }
+    command: node dist/workers/ingest-adsb.js
+    restart: unless-stopped
+    env_file: /home/fry/.env.workers
+    network_mode: host
+
+  worker-ais:
+    build: { context: ., dockerfile: Dockerfile.workers }
+    command: node dist/workers/ingest-ais.js
+    restart: unless-stopped
+    env_file: /home/fry/.env.workers
+    network_mode: host
+
+  worker-rtk:
+    build: { context: ., dockerfile: Dockerfile.workers }
+    command: node dist/workers/ingest-rtk.js
+    restart: unless-stopped
+    env_file: /home/fry/.env.workers
+    network_mode: host
+
+  worker-noaa:
+    build: { context: ., dockerfile: Dockerfile.workers }
+    command: node dist/workers/ingest-noaa.js
+    restart: unless-stopped
+    env_file: /home/fry/.env.workers
+    network_mode: host
+
+  worker-ttn:
+    build: { context: ., dockerfile: Dockerfile.workers }
+    command: node dist/workers/ingest-ttn.js
+    restart: unless-stopped
+    env_file: /home/fry/.env.workers
+    network_mode: host
+
+  worker-opencellid:
+    build: { context: ., dockerfile: Dockerfile.workers }
+    command: node dist/workers/ingest-opencellid.js
+    restart: "no"
+    env_file: /home/fry/.env.workers
+    network_mode: host
