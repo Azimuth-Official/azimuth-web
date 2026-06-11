@@ -9,3 +9,4 @@ services:
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       NODE_ENV: production
       HOSTNAME: "0.0.0.0"
+      CRON_SECRET: ${CRON_SECRET}
