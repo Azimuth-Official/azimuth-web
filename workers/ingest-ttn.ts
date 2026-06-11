@@ -19,7 +19,9 @@ async function main() {
     }
     const client = await pool.connect();
     try {
+      let count = 0;
       for (const gw of gateways) {
+        if (!gw.id) continue;
         const lat = gw.location?.latitude;
         const lon = gw.location?.longitude;
         if (lat == null || lon == null) continue;
@@ -28,9 +30,11 @@ async function main() {
           `INSERT INTO ttn.gateways (gateway_id,lon,lat,h3_8,updated_at)
            VALUES ($1,$2,$3,$4,NOW())
            ON CONFLICT (gateway_id) DO UPDATE SET lon=$2,lat=$3,h3_8=$4,updated_at=NOW()`,
-          [gw.gatewayId ?? gw.gateway_id, lon, lat, h3_8]
+          [gw.id, lon, lat, h3_8]
         );
+        count++;
       }
+      console.log(`[ttn] tick complete: ${count} gateways upserted`);
     } finally { client.release(); }
   }
 
