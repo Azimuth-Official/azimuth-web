@@ -18,6 +18,11 @@ async function main() {
 
     ws.on('open', () => {
       backoffMs = 1000; // FIX 5: reset backoff on successful open
+      // AISstream requires a subscribe message after open — without it the server closes immediately
+      ws.send(JSON.stringify({
+        APIKey: process.env.AISSTREAM_API_KEY!,
+        BoundingBoxes: [[[-90, -180], [90, 180]]],
+      }));
     });
 
     ws.on('error', err => {
