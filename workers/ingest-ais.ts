@@ -40,7 +40,8 @@ async function main() {
       hexCounts.set(h3, e);
     });
 
-    ws.on('close', () => {
+    ws.on('close', (code, reason) => {
+      console.warn(`[ais] ws close code=${code} reason=${reason?.toString() ?? ''}`);
       const now = Date.now();
       if (now - reconnectWindowStart > 3_600_000) {
         reconnectCount = 0;
