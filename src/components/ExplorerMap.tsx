@@ -9,7 +9,7 @@ import Map, {
 } from "react-map-gl/maplibre";
 import type { MapRef, MapLayerMouseEvent } from "react-map-gl/maplibre";
 import { cellToParent, cellToBoundary } from "h3-js";
-import { TIER_COLORS, TIER_LABELS, SIGNAL_COLORS } from "@/lib/explorer-constants";
+import { TIER_COLORS, TIER_LABELS, SIGNAL_COLORS, THIRD_PARTY_LAYERS } from "@/lib/explorer-constants";
 
 function zoomToH3Resolution(zoom: number): number {
   if (zoom >= 14) return 8;
@@ -122,6 +122,8 @@ interface ExplorerMapProps {
   layers: { coverage: boolean; nodes: boolean; heatmap: boolean };
   heatmapGeoJSON: GeoJSON.FeatureCollection | null;
   signalVisibility: Record<string, boolean>;
+  thirdPartyLayers: Record<string, boolean>;
+  thirdPartyGeoJSON: Record<string, GeoJSON.FeatureCollection | null>;
 }
 
 export default function ExplorerMap({
@@ -133,6 +135,8 @@ export default function ExplorerMap({
   layers,
   heatmapGeoJSON,
   signalVisibility,
+  thirdPartyLayers,
+  thirdPartyGeoJSON,
 }: ExplorerMapProps) {
   const mapRef = useRef<MapRef>(null);
   const [mapStyle, setMapStyle] = useState(MAP_STYLES.primary);
@@ -238,6 +242,30 @@ export default function ExplorerMap({
             ))}
         </Source>
       )}
+
+      {/* Third-party hex layers — below first-party coverage */}
+      {Object.entries(thirdPartyLayers).map(([layerKey, active]) => {
+        if (!active) return null;
+        const geo = thirdPartyGeoJSON[layerKey];
+        if (!geo || geo.features.length === 0) return null;
+        const layerDef = THIRD_PARTY_LAYERS[layerKey];
+        if (!layerDef) return null;
+        const aggregated = aggregateHexes(geo.features, displayResolution);
+        return (
+          <Source key={layerKey} id={`tp-${layerKey}`} type="geojson" data={aggregated}>
+            <Layer
+              id={`tp-fill-${layerKey}`}
+              type="fill"
+              paint={{ 'fill-color': layerDef.fillColor, 'fill-opacity': 0.7 }}
+            />
+            <Layer
+              id={`tp-outline-${layerKey}`}
+              type="line"
+              paint={{ 'line-color': layerDef.outlineColor, 'line-width': 1 }}
+            />
+          </Source>
+        );
+      })}
 
       {/* Hex coverage — multi-resolution, rendered first (below nodes) */}
       {layers.coverage && displayCoverage && (

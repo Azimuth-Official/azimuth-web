@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import dynamic from "next/dynamic";
 
-import { TIER_COLORS, TIER_LABELS, SIGNAL_COLORS, SIGNAL_LABELS } from "@/lib/explorer-constants";
+import { TIER_COLORS, TIER_LABELS, SIGNAL_COLORS, SIGNAL_LABELS, THIRD_PARTY_LAYERS } from "@/lib/explorer-constants";
 import SignalBreakdownPanel from "@/components/SignalBreakdownPanel";
 import NodeDetailPanel from "@/components/NodeDetailPanel";
 
@@ -57,6 +57,13 @@ export default function ExplorerPage() {
   const [signalBreakdown, setSignalBreakdown] = useState<{ total: number; types: any[] } | null>(null);
   const [observations, setObservations] = useState<any[]>([]);
   const [signalVisibility, setSignalVisibility] = useState<Record<string, boolean>>({});
+  const [thirdPartyLayers, setThirdPartyLayers] = useState<Record<string, boolean>>({
+    opencellid: false, adsb: false, ais: false,
+    noaa_cors: false, rtk2go: false, ttn: false,
+  });
+  const [thirdPartyGeoJSON, setThirdPartyGeoJSON] =
+    useState<Record<string, GeoJSON.FeatureCollection | null>>({});
+  const fetchedLayersRef = useRef<Set<string>>(new Set());
 
   const fetchData = useCallback(async () => {
     try {
@@ -112,6 +119,17 @@ export default function ExplorerPage() {
       });
     }
   }, [observations]);
+
+  useEffect(() => {
+    Object.entries(thirdPartyLayers).forEach(([layer, active]) => {
+      if (!active || fetchedLayersRef.current.has(layer)) return;
+      fetchedLayersRef.current.add(layer);
+      fetch(`/api/explorer/coverage?layer=${layer}`)
+        .then(r => r.ok ? r.json() : { type: 'FeatureCollection', features: [] })
+        .then(data => setThirdPartyGeoJSON(prev => ({ ...prev, [layer]: data })))
+        .catch(() => {});
+    });
+  }, [thirdPartyLayers]);
 
   const nodeGeoJSON = useMemo(() => {
     if (!nodes.length) return null;
@@ -172,6 +190,8 @@ export default function ExplorerPage() {
         layers={layers}
         heatmapGeoJSON={heatmapGeoJSON}
         signalVisibility={signalVisibility}
+        thirdPartyLayers={thirdPartyLayers}
+        thirdPartyGeoJSON={thirdPartyGeoJSON}
       />
 
       {/* Stats overlay — top left */}
@@ -255,6 +275,23 @@ export default function ExplorerPage() {
           />
           Signals
         </label>
+        <div className="mt-2 pt-2 border-t border-border/40">
+          <p className="text-[10px] font-semibold text-slate-500 mb-1 uppercase tracking-wide">
+            Third-Party Data
+          </p>
+          {Object.entries(THIRD_PARTY_LAYERS).map(([key, layer]) => (
+            <label key={key} className="flex items-center gap-2 text-xs text-slate-400 cursor-pointer mb-1">
+              <input
+                type="checkbox"
+                checked={thirdPartyLayers[key] ?? false}
+                onChange={() => setThirdPartyLayers(prev => ({ ...prev, [key]: !prev[key] }))}
+                className="accent-current"
+                style={{ accentColor: layer.outlineColor }}
+              />
+              {layer.label}
+            </label>
+          ))}
+        </div>
       </div>
 
       {/* Signal type toggles — top right, below layers */}
@@ -325,6 +362,16 @@ export default function ExplorerPage() {
             </div>
           </div>
         )}
+
+      {Object.entries(thirdPartyLayers).some(([, v]) => v) && (
+        <div className="absolute bottom-0 left-0 right-0 bg-navy/80 backdrop-blur-sm border-t border-border px-4 py-1 flex flex-wrap gap-3">
+          {Object.entries(THIRD_PARTY_LAYERS)
+            .filter(([key]) => thirdPartyLayers[key])
+            .map(([key, layer]) => (
+              <span key={key} className="text-[10px] text-slate-500">{layer.attribution}</span>
+            ))}
+        </div>
+      )}
 
       {/* Node detail panel — slide in from right */}
       <NodeDetailPanel
