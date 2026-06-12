@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import dynamic from "next/dynamic";
+import { cellToBoundary } from "h3-js";
 
 import { TIER_COLORS, TIER_LABELS, SIGNAL_COLORS, SIGNAL_LABELS, THIRD_PARTY_LAYERS } from "@/lib/explorer-constants";
 import SignalBreakdownPanel from "@/components/SignalBreakdownPanel";
@@ -17,6 +18,33 @@ const ExplorerMap = dynamic(() => import("@/components/ExplorerMap"), {
     </div>
   ),
 });
+
+function toFeatureCollection(data: unknown): GeoJSON.FeatureCollection {
+  if (data && typeof data === 'object' && 'type' in data && (data as { type: string }).type === 'FeatureCollection') {
+    return data as GeoJSON.FeatureCollection;
+  }
+  if (data && typeof data === 'object' && 'cells' in data && Array.isArray((data as { cells: unknown[] }).cells)) {
+    const { cells } = data as { cells: [string, number][] };
+    return {
+      type: 'FeatureCollection',
+      features: cells.map(([h3, count]) => {
+        const boundary = cellToBoundary(h3, true); // returns closed ring [[lng,lat],...]
+        return {
+          type: 'Feature' as const,
+          geometry: { type: 'Polygon' as const, coordinates: [boundary] },
+          properties: {
+            h3_index: h3,
+            observation_count: count,
+            signal_types: [],
+            avg_signal_strength: null,
+            contributor_count: 0,
+          },
+        };
+      }),
+    };
+  }
+  return { type: 'FeatureCollection', features: [] };
+}
 
 interface ExplorerNode {
   id: string;
@@ -84,7 +112,7 @@ export default function ExplorerPage() {
       }
       if (coverageRes.ok) {
         const geoData = await coverageRes.json();
-        setCoverageGeoJSON(geoData);
+        setCoverageGeoJSON(toFeatureCollection(geoData));
       }
       if (sbRes.ok) {
         setSignalBreakdown(await sbRes.json());
@@ -126,7 +154,7 @@ export default function ExplorerPage() {
       fetchedLayersRef.current.add(layer);
       fetch(`/api/explorer/coverage?layer=${layer}`)
         .then(r => r.ok ? r.json() : { type: 'FeatureCollection', features: [] })
-        .then(data => setThirdPartyGeoJSON(prev => ({ ...prev, [layer]: data })))
+        .then(data => setThirdPartyGeoJSON(prev => ({ ...prev, [layer]: toFeatureCollection(data) })))
         .catch(() => {});
     });
   }, [thirdPartyLayers]);

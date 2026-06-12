@@ -40,3 +40,10 @@ services:
     restart: "no"
     env_file: /home/fry/.env.workers
     network_mode: host
+
+  worker-agg:
+    build: { context: ., dockerfile: Dockerfile.workers }
+    command: node dist/workers/ingest-agg.js
+    restart: unless-stopped
+    env_file: /home/fry/.env.workers
+    network_mode: host

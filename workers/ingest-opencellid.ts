@@ -19,10 +19,15 @@ async function main() {
     }
   } finally { preClient.release(); }
 
+  // Truncate staging to ensure clean start (idempotent; guards against partial prior run)
+  const cleanClient = await pool.connect();
+  try { await cleanClient.query('TRUNCATE opencellid.towers_staging'); }
+  finally { cleanClient.release(); }
+
   // Download gzipped CSV
   const token = process.env.OPENCELLID_TOKEN!;
   const url = `https://opencellid.org/ocid/downloads?token=${token}&type=full&file=cell_towers.csv.gz`;
-  const response = await fetch(url, { signal: AbortSignal.timeout(60_000) });
+  const response = await fetch(url);
   if (!response.ok) throw new Error(`Download failed: ${response.status}`);
 
   // Parse header line to map fields BY NAME — real OpenCelliD CSV header:
@@ -104,6 +109,13 @@ async function main() {
   sizeClient.release();
 
   console.log(`[opencellid] COPY complete: ${rowCount} rows`);
+
+  // OpenCelliD daily export includes cells observed in trailing 18 months
+  // (~5.2M rows as of 2026-06); full historical DB (~45M) is not downloadable
+  if (rowCount < 4_000_000) {
+    console.error('[opencellid] ABORT: only ' + rowCount + ' rows — truncated download');
+    process.exit(1);
+  }
 
   // Try ADD PRIMARY KEY first; only dedupe if duplicate violation occurs
   try {
