@@ -89,6 +89,7 @@ async function main() {
       await client.query(
         `DELETE FROM ais.hex_daily WHERE observation_date < NOW() - INTERVAL '30 days'`
       );
+      console.log(`[ais] flush complete: ${snapshot.size} hexes`);
     } finally { client.release(); flushing = false; }
   }, 60_000);
 

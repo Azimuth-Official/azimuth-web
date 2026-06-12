@@ -19,6 +19,7 @@ async function main() {
     }
     const client = await pool.connect();
     try {
+      let mountpointCount = 0;
       for (const line of text.split('\n')) {
         if (!line.startsWith('STR;')) continue;
         const parts = line.split(';');
@@ -39,7 +40,9 @@ async function main() {
              identifier=$2,format=$3,carrier=$4,lon=$5,lat=$6,h3_8=$7,country=$8,last_seen=NOW()`,
           [name, identifier, format, carrier, lon, lat, h3_8, country]
         );
+        mountpointCount++;
       }
+      console.log(`[rtk] tick complete: ${mountpointCount} mountpoints`);
     } finally { client.release(); }
   }
 
