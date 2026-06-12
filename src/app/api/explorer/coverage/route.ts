@@ -138,8 +138,9 @@ async function servePairs(layer: string, cacheKey: string) {
   if (layer === 'opencellid' || layer === 'ttn') {
     try {
       const schema = layer === 'opencellid' ? 'opencellid' : 'ttn';
+      // 250k cap: lazy client-side boundary generation keeps render fast regardless of cell count
       const r = await pool.query(
-        `SELECT h3_6 AS h3, count FROM ${schema}.hex6_counts ORDER BY count DESC LIMIT 60000`
+        `SELECT h3_6 AS h3, count FROM ${schema}.hex6_counts ORDER BY count DESC LIMIT 250000`
       );
       if (r.rows.length > 0) {
         rows = r.rows;

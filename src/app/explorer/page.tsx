@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import dynamic from "next/dynamic";
-import { cellToBoundary } from "h3-js";
 
 import { TIER_COLORS, TIER_LABELS, SIGNAL_COLORS, SIGNAL_LABELS, THIRD_PARTY_LAYERS } from "@/lib/explorer-constants";
 import SignalBreakdownPanel from "@/components/SignalBreakdownPanel";
@@ -27,24 +26,17 @@ function toFeatureCollection(data: unknown): GeoJSON.FeatureCollection {
     const { cells } = data as { cells: [string, number][] };
     return {
       type: 'FeatureCollection',
-      features: cells.map(([h3, count]): GeoJSON.Feature | null => {
-        try {
-          const boundary = cellToBoundary(h3, true);
-          return {
-            type: 'Feature' as const,
-            geometry: { type: 'Polygon' as const, coordinates: [boundary] },
-            properties: {
-              h3_index: h3,
-              observation_count: count,
-              signal_types: [],
-              avg_signal_strength: null,
-              contributor_count: 0,
-            },
-          };
-        } catch {
-          return null;
-        }
-      }).filter((f): f is GeoJSON.Feature => f !== null),
+      features: cells.map(([h3, count]): GeoJSON.Feature | { type: 'Feature'; geometry: null; properties: Record<string, unknown> } => ({
+        type: 'Feature' as const,
+        geometry: null,
+        properties: {
+          h3_index: h3,
+          observation_count: count,
+          signal_types: [],
+          avg_signal_strength: null,
+          contributor_count: 0,
+        },
+      })) as GeoJSON.Feature[],
     };
   }
   return { type: 'FeatureCollection', features: [] };

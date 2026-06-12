@@ -8,7 +8,7 @@ import Map, {
   NavigationControl,
 } from "react-map-gl/maplibre";
 import type { MapRef, MapLayerMouseEvent } from "react-map-gl/maplibre";
-import { cellToParent, cellToBoundary } from "h3-js";
+import { cellToParent, cellToBoundary, getResolution } from "h3-js";
 import { TIER_COLORS, TIER_LABELS, SIGNAL_COLORS, THIRD_PARTY_LAYERS } from "@/lib/explorer-constants";
 
 function zoomToH3Resolution(zoom: number): number {
@@ -24,9 +24,20 @@ function aggregateHexes(
   features: GeoJSON.Feature[],
   targetRes: number
 ): GeoJSON.FeatureCollection {
-  if (targetRes >= 8) {
-    return { type: "FeatureCollection", features };
-  }
+if (targetRes >= 8) {
+    return {
+        type: "FeatureCollection",
+        features: features.map((f): GeoJSON.Feature | null => {
+            if (f.geometry) return f;
+            const h3Index = (f.properties as Record<string, unknown>)?.h3_index as string | undefined;
+            if (!h3Index) return null;
+            try {
+                const boundary = cellToBoundary(h3Index, true);
+                return { ...f, geometry: { type: "Polygon" as const, coordinates: [boundary] } };
+            } catch { return null; }
+        }).filter((f): f is GeoJSON.Feature => f !== null),
+    };
+}
 
   const parentMap = new globalThis.Map<
     string,
@@ -40,7 +51,8 @@ function aggregateHexes(
     if (!h3Index || h3Index.startsWith("grid")) continue;
 
     try {
-      const parent = cellToParent(h3Index, targetRes);
+      const cellRes = getResolution(h3Index);
+      const parent = targetRes <= cellRes ? cellToParent(h3Index, targetRes) : h3Index;
       const existing = parentMap.get(parent);
       const obsCount = (props.observation_count as number) || 0;
       const signals = (props.signal_types as string[]) || [];
