@@ -27,20 +27,24 @@ function toFeatureCollection(data: unknown): GeoJSON.FeatureCollection {
     const { cells } = data as { cells: [string, number][] };
     return {
       type: 'FeatureCollection',
-      features: cells.map(([h3, count]) => {
-        const boundary = cellToBoundary(h3, true); // returns closed ring [[lng,lat],...]
-        return {
-          type: 'Feature' as const,
-          geometry: { type: 'Polygon' as const, coordinates: [boundary] },
-          properties: {
-            h3_index: h3,
-            observation_count: count,
-            signal_types: [],
-            avg_signal_strength: null,
-            contributor_count: 0,
-          },
-        };
-      }),
+      features: cells.map(([h3, count]): GeoJSON.Feature | null => {
+        try {
+          const boundary = cellToBoundary(h3, true);
+          return {
+            type: 'Feature' as const,
+            geometry: { type: 'Polygon' as const, coordinates: [boundary] },
+            properties: {
+              h3_index: h3,
+              observation_count: count,
+              signal_types: [],
+              avg_signal_strength: null,
+              contributor_count: 0,
+            },
+          };
+        } catch {
+          return null;
+        }
+      }).filter((f): f is GeoJSON.Feature => f !== null),
     };
   }
   return { type: 'FeatureCollection', features: [] };
@@ -154,7 +158,10 @@ export default function ExplorerPage() {
       fetchedLayersRef.current.add(layer);
       fetch(`/api/explorer/coverage?layer=${layer}`)
         .then(r => r.ok ? r.json() : { type: 'FeatureCollection', features: [] })
-        .then(data => setThirdPartyGeoJSON(prev => ({ ...prev, [layer]: toFeatureCollection(data) })))
+        .then(data => {
+          const fc = toFeatureCollection(data);
+          setThirdPartyGeoJSON(prev => ({ ...prev, [layer]: fc }));
+        })
         .catch(() => {});
     });
   }, [thirdPartyLayers]);

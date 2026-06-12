@@ -66,23 +66,27 @@ function aggregateHexes(
     }
   }
 
-  const aggregated: GeoJSON.Feature[] = Array.from(parentMap.entries()).map(
-    ([parentH3, data]) => {
-      const boundary = cellToBoundary(parentH3, true); // [lng, lat]
-      const ring = [...boundary.map(([lng, lat]) => [lng, lat]), boundary[0]];
-      return {
-        type: "Feature" as const,
-        geometry: { type: "Polygon" as const, coordinates: [ring] },
-        properties: {
-          h3_index: parentH3,
-          observation_count: data.count,
-          signal_types: Array.from(data.signalTypes),
-          avg_signal_strength: data.strengthN > 0 ? Math.round(data.strength / data.strengthN) : null,
-          contributor_count: data.contributors,
-        },
-      };
-    }
-  );
+  const aggregated = Array.from(parentMap.entries())
+    .map(([parentH3, data]): GeoJSON.Feature | null => {
+      try {
+        const boundary = cellToBoundary(parentH3, true);
+        const ring = [...boundary.map(([lng, lat]) => [lng, lat]), boundary[0]];
+        return {
+          type: "Feature" as const,
+          geometry: { type: "Polygon" as const, coordinates: [ring] },
+          properties: {
+            h3_index: parentH3,
+            observation_count: data.count,
+            signal_types: Array.from(data.signalTypes),
+            avg_signal_strength: data.strengthN > 0 ? Math.round(data.strength / data.strengthN) : null,
+            contributor_count: data.contributors,
+          },
+        };
+      } catch {
+        return null;
+      }
+    })
+    .filter((f): f is GeoJSON.Feature => f !== null);
 
   return { type: "FeatureCollection", features: aggregated };
 }
@@ -247,7 +251,7 @@ export default function ExplorerMap({
       {Object.entries(thirdPartyLayers).map(([layerKey, active]) => {
         if (!active) return null;
         const geo = thirdPartyGeoJSON[layerKey];
-        if (!geo || geo.features.length === 0) return null;
+        if (!geo?.features?.length) return null;
         const layerDef = THIRD_PARTY_LAYERS[layerKey];
         if (!layerDef) return null;
         const aggregated = aggregateHexes(geo.features, displayResolution);
