@@ -142,6 +142,12 @@ export async function POST(request: NextRequest) {
         { status: 400 },
       );
     }
+    if (obs.full_bias_nanos !== undefined && obs.full_bias_nanos !== null && typeof obs.full_bias_nanos !== 'number') {
+      return NextResponse.json<ApiError>(
+        { error: `Observation ${i}: full_bias_nanos must be number or null` },
+        { status: 400 },
+      );
+    }
   }
 
   // Verify node belongs to user
@@ -173,8 +179,8 @@ export async function POST(request: NextRequest) {
          (node_id, signal_type, observed_at, frequency_hz, timestamp_ns,
           tdoa_offset_ns, signal_strength_dbm, snr_db, source_id, raw_data,
           latitude, longitude, accuracy_m, altitude_m, app_version, build_number,
-          device_model, android_api_level, validation_status, client_dedupe_key, rtk_enabled)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)
+          device_model, android_api_level, validation_status, client_dedupe_key, rtk_enabled, full_bias_nanos)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)
          ON CONFLICT (node_id, client_dedupe_key) WHERE client_dedupe_key IS NOT NULL DO NOTHING
          RETURNING id`,
         [
@@ -199,6 +205,7 @@ export async function POST(request: NextRequest) {
           obs.validation_status ?? 'raw',
           obs.client_dedupe_key ?? null,
           obs.rtk_enabled ?? false,
+          obs.full_bias_nanos ?? null,
         ],
       );
       if (insertResult.rows.length > 0) {

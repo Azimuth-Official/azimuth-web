@@ -128,6 +128,7 @@ export interface ObservationPayload {
   validation_status?: string;
   client_dedupe_key?: string;
   rtk_enabled?: boolean | null;
+  full_bias_nanos?: number | null;
 }
 
 export interface SubmitObservationsRequest {
