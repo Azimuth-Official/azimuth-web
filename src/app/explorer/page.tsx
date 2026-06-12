@@ -87,7 +87,15 @@ export default function ExplorerPage() {
   });
   const [thirdPartyGeoJSON, setThirdPartyGeoJSON] =
     useState<Record<string, GeoJSON.FeatureCollection | null>>({});
+  const [thirdPartyDotGeoJSON, setThirdPartyDotGeoJSON] =
+    useState<Record<string, GeoJSON.FeatureCollection | null>>({});
   const fetchedLayersRef = useRef<Set<string>>(new Set());
+
+  // Collapsible panel state
+  const [statsExpanded, setStatsExpanded] = useState(true);
+  const [layersExpanded, setLayersExpanded] = useState(true);
+  const [signalTypesExpanded, setSignalTypesExpanded] = useState(true);
+  const [tierExpanded, setTierExpanded] = useState(true);
 
   const fetchData = useCallback(async () => {
     try {
@@ -158,6 +166,25 @@ export default function ExplorerPage() {
     });
   }, [thirdPartyLayers]);
 
+  // Dot data fetch callback — called by ExplorerMap on moveend with current viewport
+  const handleDotFetch = useCallback((bbox: [number, number, number, number], zoom: number) => {
+    Object.entries(thirdPartyLayers).forEach(([layer, active]) => {
+      if (!active) return;
+      const layerDef = THIRD_PARTY_LAYERS[layer];
+      if (!layerDef?.hasDots || zoom < layerDef.dotMinZoom) {
+        setThirdPartyDotGeoJSON(prev => ({ ...prev, [layer]: null }));
+        return;
+      }
+      const bboxStr = bbox.join(',');
+      fetch(`/api/explorer/coverage?layer=${layer}&format=points&bbox=${bboxStr}&zoom=${zoom}`)
+        .then(r => r.ok ? r.json() : { type: 'FeatureCollection', features: [] })
+        .then(data => {
+          setThirdPartyDotGeoJSON(prev => ({ ...prev, [layer]: data as GeoJSON.FeatureCollection }));
+        })
+        .catch(() => {});
+    });
+  }, [thirdPartyLayers]);
+
   const nodeGeoJSON = useMemo(() => {
     if (!nodes.length) return null;
     return {
@@ -219,47 +246,62 @@ export default function ExplorerPage() {
         signalVisibility={signalVisibility}
         thirdPartyLayers={thirdPartyLayers}
         thirdPartyGeoJSON={thirdPartyGeoJSON}
+        thirdPartyDotGeoJSON={thirdPartyDotGeoJSON}
+        onDotFetch={handleDotFetch}
       />
 
       {/* Stats overlay — top left */}
       <div className="absolute top-4 left-4 bg-navy/90 backdrop-blur-md border border-border rounded-xl p-4 min-w-[200px]">
-        <h3 className="text-sm font-semibold text-slate-100 mb-3">
-          Network Explorer
-        </h3>
-        {stats ? (
-          <div className="space-y-2 text-xs">
-            <div className="flex justify-between">
-              <span className="text-slate-400">Nodes</span>
-              <span className="text-amber-500 font-mono">
-                {stats.total_nodes}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-slate-400">Active</span>
-              <span className="text-teal-400 font-mono">
-                {stats.active_nodes}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-slate-400">Observations</span>
-              <span className="text-cyan-500 font-mono">
-                {stats.total_observations.toLocaleString()}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-slate-400">Last 24h</span>
-              <span className="text-slate-100 font-mono">
-                {stats.observations_24h.toLocaleString()}
-              </span>
-            </div>
-          </div>
-        ) : (
-          <p className="text-xs text-slate-500">Loading...</p>
-        )}
-        {lastUpdate && (
-          <p className="text-[10px] text-slate-600 mt-3">
-            Updated {new Date(lastUpdate).toLocaleTimeString()}
-          </p>
+        <button
+          onClick={() => setStatsExpanded(e => !e)}
+          className="flex items-center justify-between w-full cursor-pointer"
+        >
+          <h3 className="text-sm font-semibold text-slate-100">
+            Network Explorer
+          </h3>
+          <span className="text-[10px] text-slate-500 ml-2">{statsExpanded ? "\u25B2" : "\u25BC"}</span>
+        </button>
+        {statsExpanded && (
+          <>
+            {stats ? (
+              <div className="space-y-2 text-xs mt-3">
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Nodes</span>
+                  <span className="text-amber-500 font-mono">
+                    {stats.total_nodes}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Active</span>
+                  <span className="text-teal-400 font-mono">
+                    {stats.active_nodes}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Observations</span>
+                  <span className="text-cyan-500 font-mono">
+                    {stats.total_observations.toLocaleString()}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Last 24h</span>
+                  <span className="text-slate-100 font-mono">
+                    {stats.observations_24h.toLocaleString()}
+                  </span>
+                </div>
+                {stats.observations_24h === 0 && (
+                  <p className="text-[10px] text-amber-500/60 mt-1">No new observations in 24h</p>
+                )}
+              </div>
+            ) : (
+              <p className="text-xs text-slate-500 mt-3">Loading...</p>
+            )}
+            {lastUpdate && (
+              <p className="text-[10px] text-slate-600 mt-3">
+                Updated {new Date(lastUpdate).toLocaleTimeString()}
+              </p>
+            )}
+          </>
         )}
       </div>
 
@@ -268,110 +310,143 @@ export default function ExplorerPage() {
         <SignalBreakdownPanel data={signalBreakdown} />
       </div>
 
-      {/* Layer toggle — top right */}
-      <div className="absolute top-4 right-4 bg-navy/90 backdrop-blur-md border border-border rounded-xl p-3">
-        <p className="text-xs font-semibold text-slate-100 mb-2">Layers</p>
-        <label className="flex items-center gap-2 text-xs text-slate-400 cursor-pointer mb-1">
-          <input
-            type="checkbox"
-            checked={layers.coverage}
-            onChange={() =>
-              setLayers((l) => ({ ...l, coverage: !l.coverage }))
-            }
-            className="accent-amber-500"
-          />
-          Coverage
-        </label>
-        <label className="flex items-center gap-2 text-xs text-slate-400 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={layers.nodes}
-            onChange={() => setLayers((l) => ({ ...l, nodes: !l.nodes }))}
-            className="accent-cyan-500"
-          />
-          Nodes
-        </label>
-        <label className="flex items-center gap-2 text-xs text-slate-400 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={layers.heatmap}
-            onChange={() =>
-              setLayers((l) => ({ ...l, heatmap: !l.heatmap }))
-            }
-            className="accent-amber-500"
-          />
-          Signals
-        </label>
-        <div className="mt-2 pt-2 border-t border-border/40">
-          <p className="text-[10px] font-semibold text-slate-500 mb-1 uppercase tracking-wide">
-            Third-Party Data
-          </p>
-          {Object.entries(THIRD_PARTY_LAYERS).map(([key, layer]) => (
-            <label key={key} className="flex items-center gap-2 text-xs text-slate-400 cursor-pointer mb-1">
-              <input
-                type="checkbox"
-                checked={thirdPartyLayers[key] ?? false}
-                onChange={() => setThirdPartyLayers(prev => ({ ...prev, [key]: !prev[key] }))}
-                className="accent-current"
-                style={{ accentColor: layer.outlineColor }}
-              />
-              {layer.label}
-            </label>
-          ))}
+      {/* Right-side panel stack — layers + signal types */}
+      <div className="absolute top-4 right-4 flex flex-col gap-2 max-h-[calc(100vh-120px)] overflow-y-auto">
+        {/* Layer toggle */}
+        <div className="bg-navy/90 backdrop-blur-md border border-border rounded-xl p-3">
+          <button
+            onClick={() => setLayersExpanded(e => !e)}
+            className="flex items-center justify-between w-full cursor-pointer"
+          >
+            <span className="text-xs font-semibold text-slate-100">Layers</span>
+            <span className="text-[10px] text-slate-500">{layersExpanded ? "\u25B2" : "\u25BC"}</span>
+          </button>
+          {layersExpanded && (
+            <div className="mt-2">
+              <label className="flex items-center gap-2 text-xs text-slate-400 cursor-pointer mb-1">
+                <input
+                  type="checkbox"
+                  checked={layers.coverage}
+                  onChange={() =>
+                    setLayers((l) => ({ ...l, coverage: !l.coverage }))
+                  }
+                  className="accent-amber-500"
+                />
+                Coverage
+              </label>
+              <label className="flex items-center gap-2 text-xs text-slate-400 cursor-pointer mb-1">
+                <input
+                  type="checkbox"
+                  checked={layers.nodes}
+                  onChange={() => setLayers((l) => ({ ...l, nodes: !l.nodes }))}
+                  className="accent-cyan-500"
+                />
+                Nodes
+              </label>
+              <label className="flex items-center gap-2 text-xs text-slate-400 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={layers.heatmap}
+                  onChange={() =>
+                    setLayers((l) => ({ ...l, heatmap: !l.heatmap }))
+                  }
+                  className="accent-amber-500"
+                />
+                Signals
+              </label>
+              <div className="mt-2 pt-2 border-t border-border/40">
+                <p className="text-[10px] font-semibold text-slate-500 mb-1 uppercase tracking-wide">
+                  Third-Party Data
+                </p>
+                {Object.entries(THIRD_PARTY_LAYERS).map(([key, layer]) => (
+                  <label key={key} className="flex items-center gap-2 text-xs text-slate-400 cursor-pointer mb-1">
+                    <input
+                      type="checkbox"
+                      checked={thirdPartyLayers[key] ?? false}
+                      onChange={() => setThirdPartyLayers(prev => ({ ...prev, [key]: !prev[key] }))}
+                      className="accent-current"
+                      style={{ accentColor: layer.outlineColor }}
+                    />
+                    {layer.label}
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
-      </div>
 
-      {/* Signal type toggles — top right, below layers */}
-      {layers.heatmap && Object.keys(signalVisibility).length > 0 && (
-        <div className="absolute top-4 right-4 mt-[140px] bg-navy/90 backdrop-blur-md border border-border rounded-xl p-3 max-h-[300px] overflow-y-auto">
-          <p className="text-xs font-semibold text-slate-100 mb-2">Signal Types</p>
-          {Object.entries(signalVisibility).map(([type, visible]) => (
-            <label key={type} className="flex items-center gap-2 text-xs text-slate-400 cursor-pointer mb-1">
-              <input
-                type="checkbox"
-                checked={visible}
-                onChange={() => setSignalVisibility(prev => ({ ...prev, [type]: !prev[type] }))}
-                className="accent-current"
-                style={{ accentColor: SIGNAL_COLORS[type] || "#94A3B8" }}
-              />
-              <span
-                className="w-2 h-2 rounded-full shrink-0"
-                style={{ backgroundColor: SIGNAL_COLORS[type] || "#94A3B8" }}
-              />
-              {SIGNAL_LABELS[type] || type}
-            </label>
-          ))}
-        </div>
-      )}
+        {/* Signal type toggles */}
+        {layers.heatmap && Object.keys(signalVisibility).length > 0 && (
+          <div className="bg-navy/90 backdrop-blur-md border border-border rounded-xl p-3 max-h-[300px] overflow-y-auto">
+            <button
+              onClick={() => setSignalTypesExpanded(e => !e)}
+              className="flex items-center justify-between w-full cursor-pointer"
+            >
+              <span className="text-xs font-semibold text-slate-100">Signal Types</span>
+              <span className="text-[10px] text-slate-500">{signalTypesExpanded ? "\u25B2" : "\u25BC"}</span>
+            </button>
+            {signalTypesExpanded && (
+              <div className="mt-2">
+                {Object.entries(signalVisibility).map(([type, visible]) => (
+                  <label key={type} className="flex items-center gap-2 text-xs text-slate-400 cursor-pointer mb-1">
+                    <input
+                      type="checkbox"
+                      checked={visible}
+                      onChange={() => setSignalVisibility(prev => ({ ...prev, [type]: !prev[type] }))}
+                      className="accent-current"
+                      style={{ accentColor: SIGNAL_COLORS[type] || "#94A3B8" }}
+                    />
+                    <span
+                      className="w-2 h-2 rounded-full shrink-0"
+                      style={{ backgroundColor: SIGNAL_COLORS[type] || "#94A3B8" }}
+                    />
+                    {SIGNAL_LABELS[type] || type}
+                  </label>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* Tier filter — bottom left */}
       <div className="absolute bottom-8 left-4 bg-navy/90 backdrop-blur-md border border-border rounded-xl p-3">
-        <p className="text-xs font-semibold text-slate-100 mb-2">Node Tiers</p>
-        {Object.entries(TIER_COLORS).map(([tier, color]) => (
-          <button
-            key={tier}
-            onClick={() =>
-              setTierVisibility((prev) => ({ ...prev, [tier]: !prev[tier] }))
-            }
-            className={`flex items-center gap-2 text-xs w-full text-left px-1 py-0.5 rounded transition-all cursor-pointer mb-1 ${
-              tierVisibility[tier]
-                ? "text-slate-300 hover:text-slate-100"
-                : "text-slate-600 opacity-50"
-            }`}
-          >
-            <span
-              className="w-2.5 h-2.5 rounded-full shrink-0 border transition-colors"
-              style={{
-                backgroundColor: tierVisibility[tier] ? color : "transparent",
-                borderColor: color,
-              }}
-            />
-            {TIER_LABELS[tier] || tier}
-            <span className="text-[10px] text-slate-600 ml-auto font-mono">
-              {tierCounts[tier] || 0}
-            </span>
-          </button>
-        ))}
+        <button
+          onClick={() => setTierExpanded(e => !e)}
+          className="flex items-center justify-between w-full cursor-pointer"
+        >
+          <span className="text-xs font-semibold text-slate-100">Node Tiers</span>
+          <span className="text-[10px] text-slate-500">{tierExpanded ? "\u25B2" : "\u25BC"}</span>
+        </button>
+        {tierExpanded && (
+          <div className="mt-2">
+            {Object.entries(TIER_COLORS).map(([tier, color]) => (
+              <button
+                key={tier}
+                onClick={() =>
+                  setTierVisibility((prev) => ({ ...prev, [tier]: !prev[tier] }))
+                }
+                className={`flex items-center gap-2 text-xs w-full text-left px-1 py-0.5 rounded transition-all cursor-pointer mb-1 ${
+                  tierVisibility[tier]
+                    ? "text-slate-300 hover:text-slate-100"
+                    : "text-slate-600 opacity-50"
+                }`}
+              >
+                <span
+                  className="w-2.5 h-2.5 rounded-full shrink-0 border transition-colors"
+                  style={{
+                    backgroundColor: tierVisibility[tier] ? color : "transparent",
+                    borderColor: color,
+                  }}
+                />
+                {TIER_LABELS[tier] || tier}
+                <span className="text-[10px] text-slate-600 ml-auto font-mono">
+                  {tierCounts[tier] || 0}
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Empty state */}

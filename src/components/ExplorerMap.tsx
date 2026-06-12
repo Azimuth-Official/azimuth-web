@@ -129,6 +129,14 @@ interface HexProperties {
   contributor_count: number;
 }
 
+interface ThirdPartyPopupData {
+  lng: number;
+  lat: number;
+  layerKey: string;
+  type: 'hex' | 'dot';
+  properties: Record<string, unknown>;
+}
+
 interface ExplorerMapProps {
   nodeGeoJSON: GeoJSON.FeatureCollection | null;
   coverageGeoJSON: GeoJSON.FeatureCollection | null;
@@ -140,6 +148,8 @@ interface ExplorerMapProps {
   signalVisibility: Record<string, boolean>;
   thirdPartyLayers: Record<string, boolean>;
   thirdPartyGeoJSON: Record<string, GeoJSON.FeatureCollection | null>;
+  thirdPartyDotGeoJSON: Record<string, GeoJSON.FeatureCollection | null>;
+  onDotFetch: (bbox: [number, number, number, number], zoom: number) => void;
 }
 
 export default function ExplorerMap({
@@ -153,6 +163,8 @@ export default function ExplorerMap({
   signalVisibility,
   thirdPartyLayers,
   thirdPartyGeoJSON,
+  thirdPartyDotGeoJSON,
+  onDotFetch,
 }: ExplorerMapProps) {
   const mapRef = useRef<MapRef>(null);
   const [mapStyle, setMapStyle] = useState(MAP_STYLES.primary);
@@ -162,17 +174,33 @@ export default function ExplorerMap({
     lat: number;
     properties: HexProperties;
   } | null>(null);
+  const [thirdPartyPopup, setThirdPartyPopup] = useState<ThirdPartyPopupData | null>(null);
   const [displayResolution, setDisplayResolution] = useState(3);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(null);
+  const dotFetchRef = useRef<ReturnType<typeof setTimeout>>(null);
 
-  const handleZoomEnd = useCallback(() => {
-    const zoom = mapRef.current?.getMap()?.getZoom() ?? 3;
+  const handleMoveEnd = useCallback(() => {
+    const map = mapRef.current?.getMap();
+    if (!map) return;
+    const zoom = map.getZoom();
+
+    // Update hex resolution
     const newRes = zoomToH3Resolution(zoom);
     if (newRes !== displayResolution) {
       if (debounceRef.current) clearTimeout(debounceRef.current);
       debounceRef.current = setTimeout(() => setDisplayResolution(newRes), 300);
     }
-  }, [displayResolution]);
+
+    // Trigger dot fetch with debounce
+    if (dotFetchRef.current) clearTimeout(dotFetchRef.current);
+    dotFetchRef.current = setTimeout(() => {
+      const bounds = map.getBounds();
+      const bbox: [number, number, number, number] = [
+        bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth(),
+      ];
+      onDotFetch(bbox, Math.floor(zoom));
+    }, 300);
+  }, [displayResolution, onDotFetch]);
 
   const displayCoverage = useMemo(() => {
     if (!coverageGeoJSON) return null;
@@ -188,6 +216,7 @@ export default function ExplorerMap({
         properties: hexFeature.properties as unknown as HexProperties,
       });
       onNodeSelect(null);
+      setThirdPartyPopup(null);
       return;
     }
 
@@ -197,17 +226,59 @@ export default function ExplorerMap({
       if (node) {
         onNodeSelect(node);
         setHoveredHex(null);
+        setThirdPartyPopup(null);
       }
       return;
     }
 
+    // Third-party click — query map directly since dynamic layer IDs may not be in interactiveLayerIds yet
+    const map = mapRef.current?.getMap();
+    if (map) {
+      const point: [number, number] = [e.point.x, e.point.y];
+      const tpLayerIds = map.getStyle().layers
+        .map(l => l.id)
+        .filter(id => id.startsWith("tp-dot-") || id.startsWith("tp-fill-"));
+      if (tpLayerIds.length > 0) {
+        const tpFeatures = map.queryRenderedFeatures(point, { layers: tpLayerIds });
+        const dotHit = tpFeatures.find(f => f.layer.id.startsWith("tp-dot-"));
+        if (dotHit) {
+          const layerKey = dotHit.layer.id.replace("tp-dot-", "");
+          setThirdPartyPopup({
+            lng: e.lngLat.lng, lat: e.lngLat.lat, layerKey, type: 'dot',
+            properties: dotHit.properties as Record<string, unknown>,
+          });
+          setHoveredHex(null);
+          onNodeSelect(null);
+          return;
+        }
+        const hexHit = tpFeatures.find(f => f.layer.id.startsWith("tp-fill-"));
+        if (hexHit) {
+          const layerKey = hexHit.layer.id.replace("tp-fill-", "");
+          setThirdPartyPopup({
+            lng: e.lngLat.lng, lat: e.lngLat.lat, layerKey, type: 'hex',
+            properties: hexHit.properties as Record<string, unknown>,
+          });
+          setHoveredHex(null);
+          onNodeSelect(null);
+          return;
+        }
+      }
+    }
+
     onNodeSelect(null);
     setHoveredHex(null);
+    setThirdPartyPopup(null);
   };
 
   const interactiveLayerIds = [
     ...(layers.coverage ? ["hex-fill"] : []),
     ...(layers.nodes ? ["node-circles"] : []),
+    ...Object.entries(thirdPartyLayers)
+      .filter(([, active]) => active)
+      .map(([key]) => `tp-fill-${key}`),
+    ...Object.entries(thirdPartyLayers)
+      .filter(([key, active]) => active && THIRD_PARTY_LAYERS[key]?.hasDots)
+      .map(([key]) => `tp-dot-${key}`),
   ];
 
   return (
@@ -224,7 +295,7 @@ export default function ExplorerMap({
       initialViewState={{ longitude: -92.5, latitude: 44.09, zoom: 3 }}
       interactiveLayerIds={interactiveLayerIds}
       onClick={handleMapClick}
-      onMoveEnd={handleZoomEnd}
+      onMoveEnd={handleMoveEnd}
       style={{ width: "100%", height: "100%" }}
     >
       <NavigationControl position="bottom-right" />
@@ -278,6 +349,30 @@ export default function ExplorerMap({
               id={`tp-outline-${layerKey}`}
               type="line"
               paint={{ 'line-color': layerDef.outlineColor, 'line-width': 1 }}
+            />
+          </Source>
+        );
+      })}
+
+      {/* Third-party dot layers — exact locations from public datasets */}
+      {Object.entries(thirdPartyLayers).map(([layerKey, active]) => {
+        if (!active) return null;
+        const layerDef = THIRD_PARTY_LAYERS[layerKey];
+        if (!layerDef?.hasDots) return null;
+        const geo = thirdPartyDotGeoJSON[layerKey];
+        if (!geo?.features?.length) return null;
+        return (
+          <Source key={`dots-${layerKey}`} id={`tp-dots-${layerKey}`} type="geojson" data={geo}>
+            <Layer
+              id={`tp-dot-${layerKey}`}
+              type="circle"
+              paint={{
+                'circle-color': layerDef.outlineColor,
+                'circle-radius': ['interpolate', ['linear'], ['zoom'], 6, 3, 10, 4, 14, 6],
+                'circle-opacity': 0.85,
+                'circle-stroke-width': 1,
+                'circle-stroke-color': '#0A0F1E',
+              }}
             />
           </Source>
         );
@@ -461,6 +556,63 @@ export default function ExplorerMap({
                 </p>
               )}
             </div>
+          </div>
+        </Popup>
+      )}
+      {/* Third-party popup */}
+      {thirdPartyPopup && (
+        <Popup
+          latitude={thirdPartyPopup.lat}
+          longitude={thirdPartyPopup.lng}
+          onClose={() => setThirdPartyPopup(null)}
+          closeOnClick={false}
+          className="explorer-popup"
+        >
+          <div className="p-3 min-w-[180px]">
+            {(() => {
+              const layerDef = THIRD_PARTY_LAYERS[thirdPartyPopup.layerKey];
+              if (!layerDef) return null;
+              return (
+                <>
+                  <div className="flex items-center gap-2 mb-2">
+                    <div
+                      className="w-3 h-3 rounded-full"
+                      style={{ backgroundColor: layerDef.outlineColor }}
+                    />
+                    <span className="font-semibold text-slate-100 text-sm">
+                      {thirdPartyPopup.type === 'dot' ? layerDef.dotLabel : `${layerDef.label} Coverage`}
+                    </span>
+                  </div>
+                  <div className="space-y-1 text-xs text-slate-400">
+                    {thirdPartyPopup.type === 'hex' && (
+                      <p>
+                        Observations:{" "}
+                        <span className="text-slate-100">
+                          {((thirdPartyPopup.properties.observation_count as number) ?? 0).toLocaleString()}
+                        </span>
+                      </p>
+                    )}
+                    {thirdPartyPopup.type === 'dot' && typeof thirdPartyPopup.properties.source_type === 'string' && (
+                      <p>
+                        Type:{" "}
+                        <span className="text-slate-100">
+                          {thirdPartyPopup.properties.source_type}
+                        </span>
+                      </p>
+                    )}
+                    {thirdPartyPopup.type === 'dot' && typeof thirdPartyPopup.properties.name === 'string' && (
+                      <p>
+                        Name:{" "}
+                        <span className="text-slate-100">
+                          {thirdPartyPopup.properties.name}
+                        </span>
+                      </p>
+                    )}
+                    <p className="text-[10px] text-slate-500 mt-1">{layerDef.attribution}</p>
+                  </div>
+                </>
+              );
+            })()}
           </div>
         </Popup>
       )}

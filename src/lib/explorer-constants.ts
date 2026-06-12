@@ -52,41 +52,62 @@ export const THIRD_PARTY_LAYERS: Record<string, {
   fillColor: string;
   outlineColor: string;
   attribution: string;
+  hasDots: boolean;
+  dotMinZoom: number;
+  dotLabel: string;
 }> = {
   opencellid: {
     label: 'Cell Towers',
     fillColor: 'rgba(147, 51, 234, 0.35)',
     outlineColor: 'rgba(147, 51, 234, 0.6)',
     attribution: 'Cell towers: OpenCelliD (CC BY-SA 4.0)',
+    hasDots: true,
+    dotMinZoom: 10,
+    dotLabel: 'Cell Tower',
   },
   adsb: {
     label: 'ADS-B Aircraft',
     fillColor: 'rgba(239, 68, 68, 0.35)',
     outlineColor: 'rgba(239, 68, 68, 0.6)',
     attribution: 'ADS-B: adsb.lol (ODbL)',
+    hasDots: false,
+    dotMinZoom: 99,
+    dotLabel: '',
   },
   ais: {
     label: 'AIS Vessels',
     fillColor: 'rgba(59, 130, 246, 0.35)',
     outlineColor: 'rgba(59, 130, 246, 0.6)',
     attribution: 'AIS: aisstream.io',
+    hasDots: false,
+    dotMinZoom: 99,
+    dotLabel: '',
   },
   noaa_cors: {
     label: 'GNSS Base Stations',
     fillColor: 'rgba(34, 197, 94, 0.35)',
     outlineColor: 'rgba(34, 197, 94, 0.6)',
     attribution: 'GNSS base stations: NOAA CORS',
+    hasDots: true,
+    dotMinZoom: 6,
+    dotLabel: 'GNSS Base Station',
   },
   rtk2go: {
     label: 'RTK Mountpoints',
     fillColor: 'rgba(249, 115, 22, 0.35)',
     outlineColor: 'rgba(249, 115, 22, 0.6)',
     attribution: 'RTK mountpoints: RTK2go',
+    hasDots: true,
+    dotMinZoom: 6,
+    dotLabel: 'RTK Mountpoint',
   },
   ttn: {
     label: 'LoRa Gateways',
     fillColor: 'rgba(244, 63, 94, 0.35)',
     outlineColor: 'rgba(244, 63, 94, 0.6)',
     attribution: 'LoRa gateways: The Things Network',
+    hasDots: true,
+    dotMinZoom: 8,
+    dotLabel: 'LoRa Gateway',
   },
 };
