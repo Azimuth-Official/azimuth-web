@@ -17,12 +17,14 @@ async function main() {
     });
 
     ws.on('open', () => {
-      backoffMs = 1000; // FIX 5: reset backoff on successful open
       // AISstream requires a subscribe message after open — without it the server closes immediately
       ws.send(JSON.stringify({
         APIKey: process.env.AISSTREAM_API_KEY!,
         BoundingBoxes: [[[-90, -180], [90, 180]]],
       }));
+      // Only reset backoff after connection survives 60s (prevents 1s loop on accept-then-drop)
+      const stable = setTimeout(() => { backoffMs = 1000; }, 60_000);
+      ws.once('close', () => clearTimeout(stable));
     });
 
     ws.on('error', err => {
