@@ -5,11 +5,28 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Button from "./Button";
+import NavDropdown from "./NavDropdown";
+
+const getStartedItems = [
+  { href: "/guides/quickstart", label: "Quick Start" },
+  { href: "/guides/tier0-setup", label: "Tier 0 Setup" },
+  { href: "/guides/tier2-setup", label: "Tier 2 Setup" },
+  { href: "/guides", label: "All Guides" },
+];
+
+const learnItems = [
+  { href: "/docs", label: "Documentation" },
+  { href: "/whitepaper", label: "Whitepaper" },
+  { href: "/litepaper", label: "Litepaper" },
+  { href: "/blog", label: "Blog" },
+];
 
 export default function Navbar() {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [user, setUser] = useState<{ email?: string } | null>(null);
+  const [mobileGetStarted, setMobileGetStarted] = useState(false);
+  const [mobileLearn, setMobileLearn] = useState(false);
 
   useEffect(() => {
     fetch("/api/auth/web/me")
@@ -30,6 +47,8 @@ export default function Navbar() {
     setIsOpen(false);
   };
 
+  const closeMobile = () => setIsOpen(false);
+
   return (
     <nav className="sticky top-0 z-50 bg-navy/80 backdrop-blur-md border-b border-border">
       <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
@@ -40,15 +59,10 @@ export default function Navbar() {
 
         {/* Desktop Links */}
         <div className="hidden lg:flex items-center lg:gap-4 xl:gap-8">
-          <Link href="/" className="text-slate-400 hover:text-slate-100 transition-colors">Home</Link>
-          <Link href="/docs" className="text-slate-400 hover:text-slate-100 transition-colors">Docs</Link>
-          <Link href="/whitepaper" className="text-slate-400 hover:text-slate-100 transition-colors">Whitepaper</Link>
-          <Link href="/litepaper" className="text-slate-400 hover:text-slate-100 transition-colors">Litepaper</Link>
-          <Link href="/blog" className="text-slate-400 hover:text-slate-100 transition-colors">Blog</Link>
-          <Link href="/dashboard" className="text-slate-400 hover:text-slate-100 transition-colors">Dashboard</Link>
           <Link href="/explorer" className="text-slate-400 hover:text-slate-100 transition-colors">Explorer</Link>
-          <Link href="/guides" className="text-slate-400 hover:text-slate-100 transition-colors">Setup Guide</Link>
-          <Link href="/download" className="text-amber-500 hover:text-amber-400 font-medium transition-colors">Download</Link>
+          <NavDropdown label="Get Started" items={getStartedItems} />
+          <NavDropdown label="Learn" items={learnItems} />
+          <Link href="/dashboard" className="text-slate-400 hover:text-slate-100 transition-colors">Dashboard</Link>
         </div>
 
         {/* Auth State / CTA (Desktop) */}
@@ -73,8 +87,8 @@ export default function Navbar() {
               >
                 Sign in
               </Link>
-              <Button href="/guides" size="md" variant="primary">
-                Join the Network
+              <Button href="/download" size="md" variant="primary">
+                Download
               </Button>
             </>
           )}
@@ -94,34 +108,69 @@ export default function Navbar() {
       {/* Mobile Menu */}
       {isOpen && (
         <div className="lg:hidden bg-surface border-t border-border">
-          <div className="max-w-7xl mx-auto px-6 py-4 flex flex-col gap-4">
-            <Link href="/" className="text-slate-400 hover:text-slate-100 transition-colors" onClick={() => setIsOpen(false)}>Home</Link>
-            <Link href="/docs" className="text-slate-400 hover:text-slate-100 transition-colors" onClick={() => setIsOpen(false)}>Docs</Link>
-            <Link href="/whitepaper" className="text-slate-400 hover:text-slate-100 transition-colors" onClick={() => setIsOpen(false)}>Whitepaper</Link>
-            <Link href="/litepaper" className="text-slate-400 hover:text-slate-100 transition-colors" onClick={() => setIsOpen(false)}>Litepaper</Link>
-            <Link href="/blog" className="text-slate-400 hover:text-slate-100 transition-colors" onClick={() => setIsOpen(false)}>Blog</Link>
-            <Link href="/dashboard" className="text-slate-400 hover:text-slate-100 transition-colors" onClick={() => setIsOpen(false)}>Dashboard</Link>
-            <Link href="/explorer" className="text-slate-400 hover:text-slate-100 transition-colors" onClick={() => setIsOpen(false)}>Explorer</Link>
-            <Link href="/guides" className="text-slate-400 hover:text-slate-100 transition-colors" onClick={() => setIsOpen(false)}>Setup Guide</Link>
-            <Link href="/download" className="text-amber-500 hover:text-amber-400 font-medium transition-colors" onClick={() => setIsOpen(false)}>Download</Link>
+          <div className="max-w-7xl mx-auto px-6 py-4 flex flex-col gap-1">
+            <Link href="/explorer" className="py-2.5 text-slate-400 hover:text-slate-100 transition-colors" onClick={closeMobile}>Explorer</Link>
+
+            {/* Get Started group */}
+            <button
+              onClick={() => setMobileGetStarted((v) => !v)}
+              className="flex items-center justify-between py-2.5 text-slate-400 hover:text-slate-100 transition-colors"
+            >
+              <span>Get Started</span>
+              <svg className={`w-4 h-4 transition-transform duration-200 ${mobileGetStarted ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            {mobileGetStarted && (
+              <div className="flex flex-col gap-1 pl-4 pb-2">
+                {getStartedItems.map((item) => (
+                  <Link key={item.href} href={item.href} className="py-2 text-sm text-slate-500 hover:text-amber-500 transition-colors" onClick={closeMobile}>
+                    {item.label}
+                  </Link>
+                ))}
+              </div>
+            )}
+
+            {/* Learn group */}
+            <button
+              onClick={() => setMobileLearn((v) => !v)}
+              className="flex items-center justify-between py-2.5 text-slate-400 hover:text-slate-100 transition-colors"
+            >
+              <span>Learn</span>
+              <svg className={`w-4 h-4 transition-transform duration-200 ${mobileLearn ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            {mobileLearn && (
+              <div className="flex flex-col gap-1 pl-4 pb-2">
+                {learnItems.map((item) => (
+                  <Link key={item.href} href={item.href} className="py-2 text-sm text-slate-500 hover:text-amber-500 transition-colors" onClick={closeMobile}>
+                    {item.label}
+                  </Link>
+                ))}
+              </div>
+            )}
+
+            <Link href="/dashboard" className="py-2.5 text-slate-400 hover:text-slate-100 transition-colors" onClick={closeMobile}>Dashboard</Link>
+            <Link href="/download" className="py-2.5 text-amber-500 hover:text-amber-400 font-medium transition-colors" onClick={closeMobile}>Download</Link>
 
             {user ? (
               <>
-                <div className="h-px bg-border" />
-                <div className="text-sm text-slate-400 truncate">{user.email}</div>
+                <div className="h-px bg-border my-2" />
+                <div className="text-sm text-slate-400 truncate py-1">{user.email}</div>
                 <button
                   onClick={handleLogout}
-                  className="text-left text-slate-400 hover:text-slate-100 transition-colors"
+                  className="text-left py-2.5 text-slate-400 hover:text-slate-100 transition-colors"
                 >
                   Sign out
                 </button>
               </>
             ) : (
               <>
-                <div className="h-px bg-border" />
-                <Link href="/login" className="text-amber-500 hover:text-amber-400 font-medium transition-colors" onClick={() => setIsOpen(false)}>Sign in</Link>
-                <Button href="/guides" size="md" variant="primary" className="w-full justify-center" onClick={() => setIsOpen(false)}>
-                  Join the Network
+                <div className="h-px bg-border my-2" />
+                <Link href="/login" className="py-2.5 text-amber-500 hover:text-amber-400 font-medium transition-colors" onClick={closeMobile}>Sign in</Link>
+                <Button href="/download" size="md" variant="primary" className="w-full justify-center" onClick={closeMobile}>
+                  Download
                 </Button>
               </>
             )}
