@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { authenticateRequest } from '@/lib/auth';
+import { calculateReward } from '@/lib/rewards';
+import { latLngToCell } from 'h3-js';
 import type { SubmitObservationsRequest, SubmitObservationsResponse, ApiError } from '@/lib/types';
 
 export async function POST(request: NextRequest) {
@@ -57,7 +59,6 @@ export async function POST(request: NextRequest) {
         { status: 400 },
       );
     }
-    // Optional fields: validate types if present
     if (obs.frequency_hz !== undefined && obs.frequency_hz !== null && typeof obs.frequency_hz !== 'number') {
       return NextResponse.json<ApiError>(
         { error: `Observation ${i}: frequency_hz must be number or null` },
@@ -152,7 +153,7 @@ export async function POST(request: NextRequest) {
 
   // Verify node belongs to user
   const nodeCheck = await pool.query(
-    'SELECT id FROM nodes WHERE id = $1 AND user_id = $2',
+    'SELECT id, hardware_type, tier FROM nodes WHERE id = $1 AND user_id = $2',
     [node_id, auth.user_id],
   );
   if (nodeCheck.rows.length === 0) {
@@ -162,16 +163,30 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  const nodeInfo = nodeCheck.rows[0];
+
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
 
     const GPS_ACCURACY_THRESHOLD_M = 50;
     let accepted = 0;
+    let totalRewardPoints = 0;
+
     for (const obs of observations) {
       // Skip observations with poor GPS accuracy
       if (obs.accuracy !== undefined && obs.accuracy !== null && obs.accuracy > GPS_ACCURACY_THRESHOLD_M) {
         continue;
+      }
+
+      // Compute h3_index before INSERT
+      let h3Index: string | null = null;
+      if (obs.latitude != null && obs.longitude != null) {
+        try {
+          h3Index = latLngToCell(obs.latitude, obs.longitude, 8);
+        } catch {
+          // Skip h3 computation errors
+        }
       }
 
       const insertResult = await client.query(
@@ -179,8 +194,10 @@ export async function POST(request: NextRequest) {
          (node_id, signal_type, observed_at, frequency_hz, timestamp_ns,
           tdoa_offset_ns, signal_strength_dbm, snr_db, source_id, raw_data,
           latitude, longitude, accuracy_m, altitude_m, app_version, build_number,
-          device_model, android_api_level, validation_status, client_dedupe_key, rtk_enabled, full_bias_nanos)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)
+          device_model, android_api_level, validation_status, client_dedupe_key,
+          rtk_enabled, full_bias_nanos, h3_index)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14,
+                 $15, $16, $17, $18, $19, $20, $21, $22, $23)
          ON CONFLICT (node_id, client_dedupe_key) WHERE client_dedupe_key IS NOT NULL DO NOTHING
          RETURNING id`,
         [
@@ -206,40 +223,60 @@ export async function POST(request: NextRequest) {
           obs.client_dedupe_key ?? null,
           obs.rtk_enabled ?? false,
           obs.full_bias_nanos ?? null,
+          h3Index,
         ],
       );
+
       if (insertResult.rows.length > 0) {
         accepted++;
-      }
-    }
 
-    // Award points for accepted observations
-    if (accepted > 0) {
-      const { POINTS } = await import('@/lib/points');
-      await client.query(
-        `INSERT INTO points (user_id, amount, reason, reference_id)
-         VALUES ($1, $2, $3, $4)`,
-        [auth.user_id, accepted * POINTS.PER_OBSERVATION, 'observation_upload', `batch_${Date.now()}`],
-      );
+        // Calculate reward for this observation
+        try {
+          // Check RTK provider for this user
+          let rtkActive = false;
+          if (obs.rtk_enabled === true) {
+            const providerCheck = await client.query(
+              'SELECT id FROM rtk_providers WHERE user_id = $1 AND is_active = true LIMIT 1',
+              [auth.user_id],
+            );
+            rtkActive = providerCheck.rows.length > 0;
+          }
 
-      // Check for RTK-enabled observations and award bonus
-      const rtkCount = observations.filter(obs => obs.rtk_enabled === true).length;
-      if (rtkCount > 0) {
-        // Verify user has an active RTK provider (anti-spoofing)
-        const providerCheck = await client.query(
-          'SELECT id FROM rtk_providers WHERE user_id = $1 AND is_active = true LIMIT 1',
-          [auth.user_id],
-        );
+          const breakdown = await calculateReward(client, {
+            h3_index: h3Index,
+            node_id,
+            signal_type: obs.signal_type,
+          }, {
+            id: nodeInfo.id,
+            hardware_type: nodeInfo.hardware_type,
+            tier: nodeInfo.tier ?? 0,
+            rtk_active: rtkActive,
+          });
 
-        if (providerCheck.rows.length > 0) {
-          // Award bonus for RTK observations (0.5x extra = 1.5x total)
-          // Regular 1pt already awarded above, add 0.5pt bonus per RTK observation
-          const rtkAccepted = Math.min(rtkCount, accepted);
-          const rtkBonus = Math.floor(rtkAccepted * 0.5); // 0.5 bonus per RTK obs = 1.5x total
+          if (breakdown.final > 0) {
+            await client.query(
+              `INSERT INTO points (user_id, amount, reason, reference_id, reward_breakdown)
+               VALUES ($1, $2, $3, $4, $5)`,
+              [
+                auth.user_id,
+                Math.max(Math.round(breakdown.final * 1000), 1), // Store as millipoints for precision
+                'observation_reward',
+                insertResult.rows[0].id,
+                JSON.stringify(breakdown),
+              ],
+            );
+            totalRewardPoints += breakdown.final;
+          }
+        } catch (rewardErr) {
+          // Reward calculation failed — observation still accepted
+          // Fall back to legacy flat points
           await client.query(
-            'INSERT INTO points (user_id, amount, reason, reference_id) VALUES ($1, $2, $3, $4)',
-            [auth.user_id, rtkBonus, 'observation_rtk', `rtk_batch_${Date.now()}`],
+            `INSERT INTO points (user_id, amount, reason, reference_id)
+             VALUES ($1, $2, $3, $4)`,
+            [auth.user_id, 1, 'observation_upload', insertResult.rows[0].id],
           );
+          totalRewardPoints += 1;
+          console.error('Reward calculation fallback:', rewardErr);
         }
       }
     }
@@ -247,7 +284,7 @@ export async function POST(request: NextRequest) {
     await client.query('COMMIT');
 
     return NextResponse.json<SubmitObservationsResponse>(
-      { accepted, points_earned: accepted * 1 },
+      { accepted, points_earned: Math.round(totalRewardPoints * 1000) / 1000 },
       { status: 201 },
     );
   } catch (err) {

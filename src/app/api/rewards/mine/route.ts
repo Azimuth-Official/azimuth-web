@@ -25,9 +25,25 @@ export async function GET(request: NextRequest) {
       [auth.user_id],
     );
 
-    return NextResponse.json<ListRewardsResponse>({
+    // Recent reward breakdowns from points table
+    const recentPoints = await pool.query(
+      `SELECT amount, reason, reward_breakdown, created_at
+       FROM points
+       WHERE user_id = $1 AND reward_breakdown IS NOT NULL
+       ORDER BY created_at DESC
+       LIMIT 20`,
+      [auth.user_id],
+    );
+
+    return NextResponse.json<ListRewardsResponse & { recent_breakdowns?: unknown[] }>({
       rewards: result.rows,
       total_earned: totalResult.rows[0].total,
+      recent_breakdowns: recentPoints.rows.map((r) => ({
+        amount: r.amount,
+        reason: r.reason,
+        breakdown: r.reward_breakdown,
+        created_at: r.created_at,
+      })),
     });
   } catch (err) {
     console.error('List rewards error:', err);

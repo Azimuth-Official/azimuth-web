@@ -47,6 +47,20 @@ export const SIGNAL_LABELS: Record<string, string> = {
   wifi_rtt: "WiFi RTT",
 };
 
+export const FRESHNESS_COLORS: Record<string, { fill: string; stroke: string; label: string }> = {
+  stale_30d:    { fill: 'rgba(245, 158, 11, 0.6)',   stroke: 'rgba(245, 158, 11, 0.8)',  label: 'Unmapped >30d (3x)' },
+  aging_7d:     { fill: 'rgba(251, 191, 36, 0.45)',  stroke: 'rgba(251, 191, 36, 0.65)', label: 'Stale >7d (1.5x)' },
+  baseline_24h: { fill: 'rgba(6, 182, 212, 0.35)',   stroke: 'rgba(6, 182, 212, 0.55)',  label: 'Standard >24h (1x)' },
+  recent:       { fill: 'rgba(6, 182, 212, 0.18)',   stroke: 'rgba(6, 182, 212, 0.38)',  label: 'Recent <24h (0.25x)' },
+  saturated:    { fill: 'rgba(100, 116, 139, 0.12)', stroke: 'rgba(100, 116, 139, 0.32)',label: 'Saturated <1h (0.1x)' },
+};
+
+export const FRESHNESS_LEGEND = [
+  { tier: 'stale_30d',    color: '#F59E0B', label: 'High reward (>7d unmapped)' },
+  { tier: 'baseline_24h', color: '#06B6D4', label: 'Standard' },
+  { tier: 'saturated',    color: '#64748B', label: 'Low reward (<24h)' },
+];
+
 export const THIRD_PARTY_LAYERS: Record<string, {
   label: string;
   fillColor: string;

@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import dynamic from "next/dynamic";
 
-import { TIER_COLORS, TIER_LABELS, SIGNAL_COLORS, SIGNAL_LABELS, THIRD_PARTY_LAYERS } from "@/lib/explorer-constants";
+import { TIER_COLORS, TIER_LABELS, SIGNAL_COLORS, SIGNAL_LABELS, THIRD_PARTY_LAYERS, FRESHNESS_LEGEND } from "@/lib/explorer-constants";
 import SignalBreakdownPanel from "@/components/SignalBreakdownPanel";
 import NodeDetailPanel from "@/components/NodeDetailPanel";
 
@@ -78,6 +78,8 @@ export default function ExplorerPage() {
   });
   const [coverageGeoJSON, setCoverageGeoJSON] =
     useState<GeoJSON.FeatureCollection | null>(null);
+  const [freshnessGeoJSON, setFreshnessGeoJSON] =
+    useState<GeoJSON.FeatureCollection | null>(null);
   const [signalBreakdown, setSignalBreakdown] = useState<{ total: number; types: any[] } | null>(null);
   const [observations, setObservations] = useState<any[]>([]);
   const [signalVisibility, setSignalVisibility] = useState<Record<string, boolean>>({});
@@ -90,12 +92,14 @@ export default function ExplorerPage() {
   const [thirdPartyDotGeoJSON, setThirdPartyDotGeoJSON] =
     useState<Record<string, GeoJSON.FeatureCollection | null>>({});
   const fetchedLayersRef = useRef<Set<string>>(new Set());
+  const lastFreshnessBoundsRef = useRef<string>("");
 
   // Collapsible panel state
   const [statsExpanded, setStatsExpanded] = useState(true);
   const [layersExpanded, setLayersExpanded] = useState(true);
   const [signalTypesExpanded, setSignalTypesExpanded] = useState(true);
   const [tierExpanded, setTierExpanded] = useState(true);
+  const [freshnessLegendExpanded, setFreshnessLegendExpanded] = useState(true);
 
   const fetchData = useCallback(async () => {
     try {
@@ -166,7 +170,7 @@ export default function ExplorerPage() {
     });
   }, [thirdPartyLayers]);
 
-  // Dot data fetch callback — called by ExplorerMap on moveend with current viewport
+  // Dot data fetch callback
   const handleDotFetch = useCallback((bbox: [number, number, number, number], zoom: number) => {
     Object.entries(thirdPartyLayers).forEach(([layer, active]) => {
       if (!active) return;
@@ -184,6 +188,44 @@ export default function ExplorerPage() {
         .catch(() => {});
     });
   }, [thirdPartyLayers]);
+
+  // Freshness fetch callback — called by ExplorerMap on viewport change
+  const handleFreshnessFetch = useCallback((bbox: [number, number, number, number]) => {
+    const [west, south, east, north] = bbox;
+    const boundsKey = [south, west, north, east].map(v => Math.round(v * 100) / 100).join(',');
+
+    // Skip if bounds haven't shifted significantly
+    if (boundsKey === lastFreshnessBoundsRef.current) return;
+    lastFreshnessBoundsRef.current = boundsKey;
+
+    const boundsStr = `${south},${west},${north},${east}`;
+    fetch(`/api/hex-freshness?bounds=${boundsStr}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (!data?.hexes) return;
+        const features: GeoJSON.Feature[] = data.hexes
+          .filter((hex: any) => hex.boundary && hex.boundary.length > 0)
+          .map((hex: any) => ({
+            type: 'Feature' as const,
+            geometry: {
+              type: 'Polygon' as const,
+              coordinates: [
+                [...hex.boundary.map(([lat, lng]: [number, number]) => [lng, lat]),
+                 [hex.boundary[0][1], hex.boundary[0][0]]],
+              ],
+            },
+            properties: {
+              h3_index: hex.h3_index,
+              freshness_tier: hex.freshness_tier,
+              freshness_multiplier: hex.freshness_multiplier,
+              observation_count: hex.observation_count,
+              last_observation: hex.last_observation,
+            },
+          }));
+        setFreshnessGeoJSON({ type: 'FeatureCollection', features });
+      })
+      .catch(() => {});
+  }, []);
 
   const nodeGeoJSON = useMemo(() => {
     if (!nodes.length) return null;
@@ -238,6 +280,7 @@ export default function ExplorerPage() {
       <ExplorerMap
         nodeGeoJSON={nodeGeoJSON}
         coverageGeoJSON={coverageGeoJSON}
+        freshnessGeoJSON={freshnessGeoJSON}
         nodes={nodes}
         selectedNode={selectedNode}
         onNodeSelect={setSelectedNode}
@@ -248,6 +291,7 @@ export default function ExplorerPage() {
         thirdPartyGeoJSON={thirdPartyGeoJSON}
         thirdPartyDotGeoJSON={thirdPartyDotGeoJSON}
         onDotFetch={handleDotFetch}
+        onFreshnessFetch={handleFreshnessFetch}
       />
 
       {/* Stats overlay — top left */}
@@ -405,6 +449,30 @@ export default function ExplorerPage() {
                 ))}
               </div>
             )}
+          </div>
+        )}
+      </div>
+
+      {/* Freshness legend — bottom left, above tier filter */}
+      <div className="absolute bottom-8 left-4 mb-[120px] bg-navy/90 backdrop-blur-md border border-border rounded-xl p-3">
+        <button
+          onClick={() => setFreshnessLegendExpanded(e => !e)}
+          className="flex items-center justify-between w-full cursor-pointer"
+        >
+          <span className="text-xs font-semibold text-slate-100">Reward Multiplier</span>
+          <span className="text-[10px] text-slate-500">{freshnessLegendExpanded ? "\u25B2" : "\u25BC"}</span>
+        </button>
+        {freshnessLegendExpanded && (
+          <div className="mt-2 space-y-1">
+            {FRESHNESS_LEGEND.map(({ color, label }) => (
+              <div key={label} className="flex items-center gap-2 text-xs text-slate-400">
+                <span
+                  className="w-3 h-3 rounded shrink-0"
+                  style={{ backgroundColor: color, opacity: 0.7 }}
+                />
+                {label}
+              </div>
+            ))}
           </div>
         )}
       </div>
