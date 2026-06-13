@@ -16,6 +16,13 @@ const CACHE_TTL: Record<string, number> = {
 };
 const VALID_LAYERS = new Set(['opencellid','adsb','ais','noaa_cors','rtk2go','ttn']);
 
+const DOT_CONFIG: Record<string, { minZoom: number; maxResults: number }> = {
+  opencellid: { minZoom: 10, maxResults: 5000 },
+  ttn:        { minZoom: 8,  maxResults: 3000 },
+  noaa_cors:  { minZoom: 6,  maxResults: 2000 },
+  rtk2go:     { minZoom: 6,  maxResults: 2000 },
+};
+
 export async function GET(request: NextRequest) {
   const url = new URL(request.url);
   const layer = url.searchParams.get('layer') ?? '';
@@ -23,6 +30,14 @@ export async function GET(request: NextRequest) {
 
   if (layer && !VALID_LAYERS.has(layer)) {
     return NextResponse.json({ error: 'Unknown layer' }, { status: 400 });
+  }
+
+  // Points format — viewport-bounded dot data for sources with exact coordinates
+  if (format === 'points') {
+    if (!layer) {
+      return NextResponse.json({ error: 'layer required for points format' }, { status: 400 });
+    }
+    return servePoints(layer, url.searchParams);
   }
 
   const cacheKey = `${layer}:${format}`;
@@ -127,6 +142,97 @@ export async function GET(request: NextRequest) {
     }
     console.error(`[explorer/coverage?layer=${layer}] Error:`, err);
     return NextResponse.json({ error: 'Failed to fetch coverage' }, { status: 500 });
+  }
+}
+
+async function servePoints(layer: string, params: URLSearchParams) {
+  const config = DOT_CONFIG[layer];
+  if (!config) {
+    return NextResponse.json({ type: 'FeatureCollection', features: [] });
+  }
+
+  const bboxStr = params.get('bbox');
+  const zoomStr = params.get('zoom');
+  if (!bboxStr || !zoomStr) {
+    return NextResponse.json({ error: 'bbox and zoom required for points format' }, { status: 400 });
+  }
+
+  const zoom = parseInt(zoomStr, 10);
+  if (isNaN(zoom) || zoom < config.minZoom) {
+    return NextResponse.json({ type: 'FeatureCollection', features: [] });
+  }
+
+  const bbox = bboxStr.split(',').map(Number);
+  if (bbox.length !== 4 || bbox.some(isNaN)) {
+    return NextResponse.json({ error: 'Invalid bbox format' }, { status: 400 });
+  }
+  const [minLon, minLat, maxLon, maxLat] = bbox;
+
+  // Cache key includes bbox rounded to 2 decimals for reasonable cache hit rate
+  const roundedBbox = bbox.map(v => Math.round(v * 100) / 100).join(',');
+  const cacheKey = `points:${layer}:${roundedBbox}:${zoom}`;
+  const cached = cache.get(cacheKey);
+  if (cached && Date.now() - cached.ts < 300_000) {
+    return NextResponse.json(cached.data, { headers: { 'Cache-Control': 'public, max-age=300' } });
+  }
+
+  try {
+    let rows: { lon: number; lat: number; source_type?: string; name?: string }[] = [];
+
+    if (layer === 'opencellid') {
+      const r = await pool.query(
+        `SELECT lon, lat, radio AS source_type FROM opencellid.towers
+         WHERE lon BETWEEN $1 AND $3 AND lat BETWEEN $2 AND $4
+           AND lon IS NOT NULL AND lat IS NOT NULL
+         LIMIT $5`,
+        [minLon, minLat, maxLon, maxLat, config.maxResults]
+      );
+      rows = r.rows;
+    } else if (layer === 'ttn') {
+      const r = await pool.query(
+        `SELECT lon, lat, 'LoRa Gateway' AS source_type FROM ttn.gateways
+         WHERE lon BETWEEN $1 AND $3 AND lat BETWEEN $2 AND $4
+           AND lon IS NOT NULL AND lat IS NOT NULL
+         LIMIT $5`,
+        [minLon, minLat, maxLon, maxLat, config.maxResults]
+      );
+      rows = r.rows;
+    } else if (layer === 'noaa_cors') {
+      const r = await pool.query(
+        `SELECT lon, lat, 'GNSS Base Station' AS source_type, name FROM noaa_cors.stations
+         WHERE lon BETWEEN $1 AND $3 AND lat BETWEEN $2 AND $4
+           AND lon IS NOT NULL AND lat IS NOT NULL
+         LIMIT $5`,
+        [minLon, minLat, maxLon, maxLat, config.maxResults]
+      );
+      rows = r.rows;
+    } else if (layer === 'rtk2go') {
+      const r = await pool.query(
+        `SELECT lon, lat, format AS source_type, name FROM rtk2go.mountpoints
+         WHERE lon BETWEEN $1 AND $3 AND lat BETWEEN $2 AND $4
+           AND lon IS NOT NULL AND lat IS NOT NULL
+         LIMIT $5`,
+        [minLon, minLat, maxLon, maxLat, config.maxResults]
+      );
+      rows = r.rows;
+    }
+
+    const features: GeoJSON.Feature[] = rows.map(r => ({
+      type: 'Feature' as const,
+      geometry: { type: 'Point' as const, coordinates: [r.lon, r.lat] },
+      properties: {
+        source: layer,
+        source_type: r.source_type || '',
+        ...(r.name ? { name: r.name } : {}),
+      },
+    }));
+
+    const data: GeoJSON.FeatureCollection = { type: 'FeatureCollection', features };
+    cache.set(cacheKey, { data, ts: Date.now() });
+    return NextResponse.json(data, { headers: { 'Cache-Control': 'public, max-age=300' } });
+  } catch (err) {
+    console.error(`[explorer/coverage?layer=${layer}&format=points] Error:`, err);
+    return NextResponse.json({ type: 'FeatureCollection', features: [] });
   }
 }
 
