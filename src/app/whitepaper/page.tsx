@@ -19,7 +19,8 @@ const tocItems = [
   { id: 'tokenomics', label: '6  Tokenomics', indent: 0 },
   { id: 'proof-of-observation', label: '6.1  Proof of Observation', indent: 1 },
   { id: 'reward-factors', label: '6.2  Reward Factors', indent: 1 },
-  { id: 'data-marketplace', label: '6.3  Data Marketplace', indent: 1 },
+  { id: 'reward-mechanics', label: '6.3  Reward Mechanics', indent: 1 },
+  { id: 'data-marketplace', label: '6.4  Data Marketplace', indent: 1 },
   { id: 'roadmap', label: '7  Roadmap', indent: 0 },
   { id: 'conclusion', label: '8  Conclusion', indent: 0 },
   { id: 'references', label: 'References', indent: 0 },
@@ -557,7 +558,7 @@ export default function WhitepaperPage() {
                     Tier 1+ SDR nodes&apos; timing observations are resolved against.
                   </p>
                   <div className="pt-3 border-t border-border text-xs text-slate-500 font-mono">
-                    Android 8.0+ · Cell/GNSS/WiFi · GPS-tagged · $0
+                    Android 8.0+ · Cell/GNSS/WiFi · GPS-tagged · $0 · <a href="/download" className="text-amber-500 hover:text-amber-400">Download APK</a>
                   </div>
                 </div>
 
@@ -774,9 +775,149 @@ export default function WhitepaperPage() {
               </div>
             </div>
 
-            {/* 6.3 */}
+
+            {/* 6.3 Reward Mechanics */}
+            <div id="reward-mechanics" className="mb-12 scroll-mt-24">
+              <h3 className="text-xl font-bold text-slate-100 mb-4">6.3 Reward Mechanics</h3>
+              <div className="space-y-4 text-slate-400 leading-relaxed">
+                <p>
+                  The reward function combines several multiplicative factors that incentivize
+                  geographic coverage, discourage over-concentration, and reward hardware investment.
+                  All parameters are drawn from the Rewards Architecture v1 specification.
+                </p>
+              </div>
+
+              <div className="mt-6 space-y-8">
+                {/* Base Points */}
+                <div className="bg-surface border border-border rounded-xl p-6">
+                  <h4 className="text-lg font-semibold text-slate-100 mb-3">Base Points per Epoch</h4>
+                  <p className="text-slate-400 text-sm mb-4">
+                    Each tier earns a fixed number of base points per observation epoch, reflecting the
+                    hardware investment and data quality contributed:
+                  </p>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="bg-navy rounded-lg p-4 text-center">
+                      <p className="text-xs text-slate-500 mb-1">Tier 0</p>
+                      <p className="text-2xl font-bold text-teal-500">1</p>
+                    </div>
+                    <div className="bg-navy rounded-lg p-4 text-center">
+                      <p className="text-xs text-slate-500 mb-1">Tier 1</p>
+                      <p className="text-2xl font-bold text-amber-500">3</p>
+                    </div>
+                    <div className="bg-navy rounded-lg p-4 text-center">
+                      <p className="text-xs text-slate-500 mb-1">Tier 2</p>
+                      <p className="text-2xl font-bold text-amber-500">8</p>
+                    </div>
+                    <div className="bg-navy rounded-lg p-4 text-center">
+                      <p className="text-xs text-slate-500 mb-1">Tier 3</p>
+                      <p className="text-2xl font-bold text-amber-500">15</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Hex Freshness */}
+                <div className="bg-surface border border-border rounded-xl p-6">
+                  <h4 className="text-lg font-semibold text-slate-100 mb-3">Hex Freshness Multiplier</h4>
+                  <p className="text-slate-400 text-sm mb-4">
+                    H3 resolution-8 hexagons are classified by how recently they were first observed. Early
+                    arrivals to uncharted hexes earn dramatically more, incentivizing geographic expansion
+                    over clustering:
+                  </p>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-border">
+                          <th className="text-left py-2 pr-4 text-slate-200 font-medium">Status</th>
+                          <th className="text-left py-2 text-slate-200 font-medium">Multiplier</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border text-slate-400">
+                        <tr><td className="py-2 pr-4">Virgin (never observed)</td><td className="py-2 font-mono text-teal-500">3.0&times;</td></tr>
+                        <tr><td className="py-2 pr-4">Stale (long since observed)</td><td className="py-2 font-mono text-teal-500">2.0&times;</td></tr>
+                        <tr><td className="py-2 pr-4">Aging</td><td className="py-2 font-mono text-amber-500">1.5&times;</td></tr>
+                        <tr><td className="py-2 pr-4">Baseline</td><td className="py-2 font-mono text-slate-300">1.0&times;</td></tr>
+                        <tr><td className="py-2 pr-4">Recent</td><td className="py-2 font-mono text-slate-500">0.25&times;</td></tr>
+                        <tr><td className="py-2 pr-4">Saturated</td><td className="py-2 font-mono text-red-500">0.10&times;</td></tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Saturation Decay */}
+                <div className="bg-surface border border-border rounded-xl p-6">
+                  <h4 className="text-lg font-semibold text-slate-100 mb-3">Saturation Decay</h4>
+                  <p className="text-slate-400 text-sm mb-4">
+                    As more nodes occupy the same hex, per-node rewards decay logarithmically:
+                  </p>
+                  <p className="font-mono text-amber-500 text-center text-lg mb-4">
+                    reward = base &times; 1 / (1 + k &middot; ln(N))
+                  </p>
+                  <p className="text-slate-400 text-sm mb-3">
+                    where N is the number of active nodes in the hex and k is tier-dependent:
+                  </p>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="bg-navy rounded-lg p-3 text-center">
+                      <p className="text-xs text-slate-500 mb-1">Tier 0 (k)</p>
+                      <p className="text-lg font-mono text-slate-300">0.50</p>
+                    </div>
+                    <div className="bg-navy rounded-lg p-3 text-center">
+                      <p className="text-xs text-slate-500 mb-1">Tier 1 (k)</p>
+                      <p className="text-lg font-mono text-slate-300">0.30</p>
+                    </div>
+                    <div className="bg-navy rounded-lg p-3 text-center">
+                      <p className="text-xs text-slate-500 mb-1">Tier 2 (k)</p>
+                      <p className="text-lg font-mono text-slate-300">0.15</p>
+                    </div>
+                    <div className="bg-navy rounded-lg p-3 text-center">
+                      <p className="text-xs text-slate-500 mb-1">Tier 3 (k)</p>
+                      <p className="text-lg font-mono text-slate-300">0.10</p>
+                    </div>
+                  </div>
+                  <p className="text-slate-500 text-xs mt-3">
+                    Higher-tier nodes decay more slowly, reflecting greater hardware investment and data
+                    quality.
+                  </p>
+                </div>
+
+                {/* Collision Detection */}
+                <div className="bg-surface border border-border rounded-xl p-6">
+                  <h4 className="text-lg font-semibold text-slate-100 mb-3">Collision Detection</h4>
+                  <p className="text-slate-400 text-sm">
+                    When multiple nodes activate in the same H3 res-8 hex within a 30-minute window,
+                    latecomers are suppressed for the remainder of that window. This prevents reward
+                    sniping and discourages rapid relocation to high-value hexes. The first node to
+                    submit valid observations in a hex claims the epoch; subsequent arrivals within 30
+                    minutes receive zero reward for that epoch.
+                  </p>
+                </div>
+
+                {/* Density Cap */}
+                <div className="bg-surface border border-border rounded-xl p-6">
+                  <h4 className="text-lg font-semibold text-slate-100 mb-3">Density Cap</h4>
+                  <p className="text-slate-400 text-sm">
+                    Beyond the saturation decay curve, a hard density cap limits per-node rewards as
+                    1/&radic;N, with an absolute maximum of 10 nodes per hex. Beyond 10 nodes, additional
+                    nodes in the same hex earn zero reward regardless of tier or data quality. This
+                    ensures the network grows outward rather than clustering.
+                  </p>
+                </div>
+
+                {/* RTK Bonus */}
+                <div className="bg-surface border border-border rounded-xl p-6">
+                  <h4 className="text-lg font-semibold text-slate-100 mb-3">RTK Bonus</h4>
+                  <p className="text-slate-400 text-sm">
+                    Nodes with Real-Time Kinematic (RTK) GNSS positioning &mdash; providing centimeter-level
+                    accuracy in their own location &mdash; earn a 1.5&times; multiplier on all observations.
+                    Precise node positioning dramatically improves the accuracy of TDOA calculations,
+                    making RTK-equipped nodes disproportionately valuable to the network.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* 6.4 */}
             <div id="data-marketplace" className="mb-12 scroll-mt-24">
-              <h3 className="text-xl font-bold text-slate-100 mb-4">6.3 Data Marketplace</h3>
+              <h3 className="text-xl font-bold text-slate-100 mb-4">6.4 Data Marketplace</h3>
               <div className="space-y-4 text-slate-400 leading-relaxed">
                 <p>
                   The demand side of the token economy is the positioning and mapping query service.

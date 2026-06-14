@@ -212,12 +212,26 @@ export default function LitepaperPage() {
             Start with $30. Scale from there.
           </h2>
           <p className="text-slate-400 leading-relaxed mb-10">
-            Three hardware tiers let you enter at any level. Every tier earns;
+            Four hardware tiers let you enter at any level — starting at zero cost. Every tier earns;
             higher tiers produce higher-quality data and earn proportionally more.
           </p>
 
           <div className="space-y-0 divide-y divide-border">
             <div className="flex flex-col md:flex-row gap-6 py-8 first:pt-0">
+              <div className="md:w-48 flex-shrink-0">
+                <p className="text-2xl font-bold text-teal-500">Free</p>
+                <p className="text-slate-100 font-semibold">Tier 0 — Mobile</p>
+              </div>
+              <div>
+                <p className="text-slate-100 font-semibold mb-2">Android Observer App</p>
+                <p className="text-slate-400">
+                  Turn your existing Android phone into an Azimuth node at zero cost.
+                  Collects cell tower survey data, GNSS measurements, and WiFi signals.{' '}
+                  <a href="/download" className="text-amber-500 hover:text-amber-400">Download the APK</a>.
+                </p>
+              </div>
+            </div>
+            <div className="flex flex-col md:flex-row gap-6 py-8">
               <div className="md:w-48 flex-shrink-0">
                 <p className="text-2xl font-bold text-amber-500">$30</p>
                 <p className="text-slate-100 font-semibold">Tier 1 — BYOD</p>
@@ -297,11 +311,70 @@ export default function LitepaperPage() {
             </Card>
           </div>
 
-          <p className="text-slate-400 leading-relaxed">
+          <p className="text-slate-400 leading-relaxed mb-10">
             Nodes in underserved areas earn more — your value to the network is
             defined by where you are, not just what hardware you run. Unlike storage
             or bandwidth DePINs, positioning nodes are geographically irreplaceable.
           </p>
+
+          {/* Reward Mechanics */}
+          <div className="border-t border-border pt-10">
+            <h3 className="text-2xl font-bold text-slate-100 mb-6">Reward Mechanics</h3>
+            <p className="text-slate-400 leading-relaxed mb-8">
+              Rewards are calculated per epoch using multiplicative factors that balance
+              geographic expansion, data quality, and fair distribution.
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+              <Card>
+                <h4 className="text-lg font-semibold text-slate-100 mb-2">Base Points</h4>
+                <p className="text-slate-400 text-sm mb-3">
+                  Each tier earns fixed base points per epoch:
+                </p>
+                <div className="flex gap-3 text-center">
+                  <div className="flex-1 bg-navy rounded-lg p-3">
+                    <p className="text-xs text-slate-500">T0</p>
+                    <p className="text-xl font-bold text-teal-500">1</p>
+                  </div>
+                  <div className="flex-1 bg-navy rounded-lg p-3">
+                    <p className="text-xs text-slate-500">T1</p>
+                    <p className="text-xl font-bold text-amber-500">3</p>
+                  </div>
+                  <div className="flex-1 bg-navy rounded-lg p-3">
+                    <p className="text-xs text-slate-500">T2</p>
+                    <p className="text-xl font-bold text-amber-500">8</p>
+                  </div>
+                  <div className="flex-1 bg-navy rounded-lg p-3">
+                    <p className="text-xs text-slate-500">T3</p>
+                    <p className="text-xl font-bold text-amber-500">15</p>
+                  </div>
+                </div>
+              </Card>
+              <Card>
+                <h4 className="text-lg font-semibold text-slate-100 mb-2">Hex Freshness</h4>
+                <p className="text-slate-400 text-sm">
+                  First to observe a new H3 hex? Earn up to 3&times; base. Saturated hexes
+                  drop to 0.1&times;. The network rewards explorers, not followers.
+                </p>
+              </Card>
+              <Card>
+                <h4 className="text-lg font-semibold text-slate-100 mb-2">Saturation &amp; Density</h4>
+                <p className="text-slate-400 text-sm">
+                  Per-node rewards decay logarithmically as more nodes join a hex. Hard cap
+                  at 10 nodes per hex &mdash; beyond that, additional nodes earn zero. Growth
+                  goes outward, not inward.
+                </p>
+              </Card>
+              <Card>
+                <h4 className="text-lg font-semibold text-slate-100 mb-2">Collision &amp; RTK</h4>
+                <p className="text-slate-400 text-sm">
+                  30-minute latecomer suppression prevents reward sniping. Nodes with RTK
+                  GNSS (centimeter-level self-positioning) earn a 1.5&times; bonus on all
+                  observations.
+                </p>
+              </Card>
+            </div>
+          </div>
         </div>
       </section>
 

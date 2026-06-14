@@ -44,7 +44,7 @@ export default function Footer() {
               </li>
               <li>
                 <Link
-                  href="/guides/quickstart"
+                  href="/guides"
                   className="text-slate-400 hover:text-slate-100 transition-colors"
                 >
                   Setup Guide
@@ -59,7 +59,9 @@ export default function Footer() {
             <ul className="space-y-2">
               <li>
                 <a
-                  href="#"
+                  href="https://discord.gg/3Da6xEWWTq"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="text-slate-400 hover:text-slate-100 transition-colors"
                 >
                   Discord
@@ -67,7 +69,9 @@ export default function Footer() {
               </li>
               <li>
                 <a
-                  href="#"
+                  href="https://x.com/AzimuthDePIN"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="text-slate-400 hover:text-slate-100 transition-colors"
                 >
                   Twitter / X
@@ -75,7 +79,9 @@ export default function Footer() {
               </li>
               <li>
                 <a
-                  href="#"
+                  href="https://github.com/Azimuth-Official"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="text-slate-400 hover:text-slate-100 transition-colors"
                 >
                   GitHub
@@ -89,20 +95,28 @@ export default function Footer() {
             <h3 className="text-slate-100 font-semibold mb-4">Legal</h3>
             <ul className="space-y-2">
               <li>
-                <a
-                  href="#"
+                <Link
+                  href="/privacy"
                   className="text-slate-400 hover:text-slate-100 transition-colors"
                 >
                   Privacy
-                </a>
+                </Link>
               </li>
               <li>
-                <a
-                  href="#"
+                <Link
+                  href="/terms"
                   className="text-slate-400 hover:text-slate-100 transition-colors"
                 >
                   Terms
-                </a>
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/cookies"
+                  className="text-slate-400 hover:text-slate-100 transition-colors"
+                >
+                  Cookie Policy
+                </Link>
               </li>
             </ul>
           </div>

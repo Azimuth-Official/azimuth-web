@@ -29,7 +29,7 @@ const posts: BlogPost[] = [
 
 export default function BlogIndex() {
   return (
-    <div>
+    <div className="not-prose">
       <div className="mb-12">
         <h1 className="text-4xl font-bold text-slate-100 mb-2">Blog</h1>
         <p className="text-slate-400">

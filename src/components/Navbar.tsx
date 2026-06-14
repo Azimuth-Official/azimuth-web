@@ -8,10 +8,11 @@ import Button from "./Button";
 import NavDropdown from "./NavDropdown";
 
 const getStartedItems = [
-  { href: "/guides/quickstart", label: "Quick Start" },
-  { href: "/guides/tier0-setup", label: "Tier 0 Setup" },
-  { href: "/guides/tier2-setup", label: "Tier 2 Setup" },
-  { href: "/guides", label: "All Guides" },
+  { href: "/guides", label: "Quick Start" },
+  { href: "/guides/tier0-setup", label: "Tier 0 — Mobile" },
+  { href: "/guides/quickstart", label: "Tier 1 — BYOD SDR" },
+  { href: "/guides/tier2-setup", label: "Tier 2 — Dedicated" },
+  { href: "/guides/tier3-setup", label: "Tier 3 — Coherent Array" },
 ];
 
 const learnItems = [

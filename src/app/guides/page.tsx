@@ -39,6 +39,13 @@ export default function GuidesIndex() {
       badge: 'Coming soon',
       badgeColor: 'bg-amber-500/10 text-amber-500',
     },
+    {
+      title: 'Tier 3 — Coherent Array',
+      description: 'Deploy a multi-channel SDR array with TDOA and Angle-of-Arrival for maximum rewards.',
+      href: '/guides/tier3-setup',
+      badge: 'Coming soon',
+      badgeColor: 'bg-amber-500/10 text-amber-500',
+    },
   ];
 
   return (
