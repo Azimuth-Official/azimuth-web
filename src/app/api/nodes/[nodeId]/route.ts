@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { authenticateRequest } from '@/lib/auth';
+import { latLngToCell } from 'h3-js';
 import type { UpdateNodeRequest, ApiError } from '@/lib/types';
 
 export async function PATCH(
@@ -88,6 +89,15 @@ export async function PATCH(
     }
     updates.push(`metadata = $${idx++}`);
     values.push(JSON.stringify(body.metadata));
+  }
+
+  // Recompute h3_index if both lat and lon are being updated
+  if (body.latitude !== undefined && body.longitude !== undefined) {
+    const nodeCheck = await pool.query('SELECT hardware_type FROM nodes WHERE id = $1', [nodeId]);
+    if (nodeCheck.rows[0]?.hardware_type !== 'tier0_mobile') {
+      updates.push(`h3_index = $${idx++}`);
+      values.push(latLngToCell(body.latitude, body.longitude, 8));
+    }
   }
 
   if (updates.length === 0) {

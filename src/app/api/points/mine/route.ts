@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
       'SELECT COALESCE(SUM(amount), 0)::integer as balance FROM points WHERE user_id = $1',
       [auth.user_id],
     );
-    const balance = balanceResult.rows[0]?.balance ?? 0;
+    const balance = (balanceResult.rows[0]?.balance ?? 0) / 1000;
 
     // Fetch history
     const historyResult = await pool.query(
@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
 
     const history: PointEntry[] = historyResult.rows.map((row) => ({
       id: row.id,
-      amount: row.amount,
+      amount: row.amount / 1000,
       reason: row.reason,
       reference_id: row.reference_id,
       created_at: row.created_at,

@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
     const entries: LeaderboardEntry[] = result.rows.map((row, index) => ({
       rank: index + 1,
       animal_name: generateAnimalName(row.id),
-      points: row.points,
+      points: row.points / 1000,
       observation_count: row.observation_count,
     }));
 

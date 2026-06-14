@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
       rewards: result.rows,
       total_earned: totalResult.rows[0].total,
       recent_breakdowns: recentPoints.rows.map((r) => ({
-        amount: r.amount,
+        amount: r.amount / 1000,
         reason: r.reason,
         breakdown: r.reward_breakdown,
         created_at: r.created_at,

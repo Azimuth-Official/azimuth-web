@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { authenticateRequest } from '@/lib/auth';
+import { latLngToCell } from 'h3-js';
 import type { RegisterNodeRequest, RegisterNodeResponse, ApiError } from '@/lib/types';
 
 export async function POST(request: NextRequest) {
@@ -54,11 +55,16 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    let h3Index: string | null = null;
+    if (hardware_type !== 'tier0_mobile' && latitude != null && longitude != null) {
+      h3Index = latLngToCell(latitude, longitude, 8);
+    }
+
     const result = await pool.query(
-      `INSERT INTO nodes (user_id, hardware_type, label, location_lat, location_lon, location_alt_m)
-       VALUES ($1, $2, $3, $4, $5, $6)
+      `INSERT INTO nodes (user_id, hardware_type, label, location_lat, location_lon, location_alt_m, h3_index)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
        RETURNING id`,
-      [auth.user_id, hardware_type, label ?? null, latitude ?? null, longitude ?? null, altitude_m ?? null],
+      [auth.user_id, hardware_type, label ?? null, latitude ?? null, longitude ?? null, altitude_m ?? null, h3Index],
     );
 
     return NextResponse.json<RegisterNodeResponse>(
